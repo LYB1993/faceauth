@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Face Demo Stream</title>
+    <style type="text/css">
+        body {
+            text-align: center
+        }
+    </style>
+</head>
+
+<body>
+    <div class="centre">
+        <div>
+            <button onclick="start()">发送/停止</button>
+            <button onclick="draw()">绘制</button>
+            <button onclick="openCamera()">开启</button>
+            <button onclick="stopRecord()">关闭</button>
+            <button onclick="choose()">切换</button>
+            <button onclick="gotDevices()">gotDevices</button>
+
+            <select id='select'></select>
+        </div>
+        <video id="video" width="640" height="480" style="display: none;"></video>
+        <canvas id="canvas" width="640" height="480"></canvas>
+    </div>
+</body>
+<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+<script src="https://cdn.bootcss.com/socket.io/2.2.0/socket.io.js"></script>
+<script src="https://cdn.bootcss.com/webcamjs/1.0.25/webcam.min.js"></script>
+<script>
+    var doc_video;
+    var doc_canvas;
+    var context;
+    var isstart = false;
+    var boxpointJson;
+    var noticeSocket;
+    var faces = []
+    var mediaRecorder;
+    var mediaStream;
+
+    function init_obj(canvas_id, video_id) {
+        doc_video = document.getElementById('video')
+        doc_canvas = document.getElementById("canvas")
+        context = doc_canvas.getContext('2d');
+        noticeSocket = io.connect('http://127.0.0.1:5001/notice')
+        noticeSocket.on('server', function(data) {
+            console.log(data.data)
+            boxpointJson = $.parseJSON(data.data)
+            for (let i = 0; i < boxpointJson.length; i++) {
+                var rect = {};
+                rect.x = parseInt(boxpointJson[i]['left'])
+                rect.y = parseInt(boxpointJson[i]['top'])
+                rect.width = parseInt(boxpointJson[i]['bottom']) - parseInt(boxpointJson[i]['top'])
+                rect.height = parseInt(boxpointJson[i]['right']) - parseInt(boxpointJson[i]['left'])
+                rect.name = boxpointJson[i]['name']
+                faces.push(rect)
+            }
+
+        });
+    }
+
+    function start() {
+        if (isstart) {
+            isstart = false
+        } else {
+            isstart = true
+        }
+
+    }
+    init_obj();
+    //c63d8d08e295d9e6b58d0306ade0d3fe1cde576a0470754acffc4baef0fe79da
+    //7cfd2491d6ca42b22757cc479f57a950498706140d9b6dd9f033b3edf15ebcfa
+    function openCamera() {
+        init_obj();
+        MediaUtils.getUserMedia(true, false, function(err, stream) {
+            if (err) {
+                throw err;
+            } else {
+                var options = {
+                    video: {
+                        deviceId: {
+                            exact: 'c63d8d08e295d9e6b58d0306ade0d3fe1cde576a0470754acffc4baef0fe79da'
+                        }
+                    },
+                    audio: true,
+                    audioBitsPerSecond: 128000,
+                    videoBitsPerSecond: 2500000,
+                    mimeType: 'video/webm;codecs=vp9'
+                }
+
+                mediaRecorder = new MediaRecorder(stream, options);
+                mediaStream = stream;
+                doc_video.srcObject = stream;
+                doc_video.play();
+                mediaRecorder.ondataavailable = function(e) {};
+                mediaRecorder.onstop = function(e) {
+                    mediaRecorder.stop();
+                    MediaUtils.closeStream(mediaStream);
+                };
+            }
+        });
+        doc_video.ontimeupdate = function() {
+            context.drawImage(doc_video, 0, 0, doc_video.width, doc_video.height);
+            var base64 = doc_canvas.toDataURL('images/png');
+            let timestamp = Math.round(new Date() / 1000)
+            if (isstart && timestamp % 3 === 0) {
+                noticeSocket.emit('unknown_img', {
+                    data: base64
+                })
+            }
+            draw_face_box(faces)
+            faces = []
+        }
+    }
+
+    // 停止录制
+    function stopRecord() {
+        mediaRecorder.stop();
+        mediaStream.getTracks().forEach(track => {
+            track.stop();
+        })
+    }
+
+    //画出人脸区域
+    function draw_face_box(faces) {
+        for (let i = 0; i < faces.length; i++) {
+            var rect = faces[i];
+            context.strokeStyle = '#a64ceb';
+            //if(rect.width<60) return
+            context.strokeRect(rect.x, rect.y, rect.width, rect.height);
+            context.font = '11px Helvetica';
+            context.fillStyle = "#fff";
+            context.fillText(rect.name, rect.x + rect.width / 2, rect.y + rect.height + 11);
+        }
+    }
+
+
+    function stopMediaTracks(mediaStream) {
+        mediaStream.getTracks().forEach(track => {
+            track.stop();
+        });
+    }
+    const select = document.getElementById('select');
+
+    function gotDevices(mediaRecorder) {
+        select.innerHTML = '';
+        select.appendChild(document.createElement('option'));
+        let count = 1;
+        mediaDevices.forEach(mediaDevice => {
+            if (mediaDevice.kind === 'videoinput') {
+                const option = document.createElement('option');
+                option.value = mediaDevice.deviceId;
+                const label = mediaDevice.label || `Camera ${count++}`;
+                const textNode = document.createTextNode(label);
+                option.appendChild(textNode);
+                select.appendChild(option);
+            }
+        });
+    }
+
+    var MediaUtils = {
+        /**
+         * 获取用户媒体设备(处理兼容的问题)
+         * @param videoEnable {boolean} - 是否启用摄像头
+         * @param audioEnable {boolean} - 是否启用麦克风
+         * @param callback {Function} - 处理回调
+         */
+        getUserMedia: function(videoEnable, audioEnable, callback) {
+            navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia ||
+                navigator.msGetUserMedia || window.getUserMedia;
+            var constraints = {
+                video: videoEnable,
+                audio: audioEnable
+            };
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
+                    callback(false, stream);
+                })['catch'](function(err) {
+                    callback(err);
+                });
+            } else if (navigator.getUserMedia) {
+                navigator.getUserMedia(constraints, function(stream) {
+                    callback(false, stream);
+                }, function(err) {
+                    callback(err);
+                });
+            } else {
+                callback(new Error('Not support userMedia'));
+            }
+        },
+
+        /**
+         * 关闭媒体流
+         * @param stream {MediaStream} - 需要关闭的流
+         */
+        closeStream: function(stream) {
+            if (typeof stream.stop === 'function') {
+                stream.stop();
+            } else {
+                let trackList = [stream.getAudioTracks(), stream.getVideoTracks()];
+
+                for (let i = 0; i < trackList.length; i++) {
+                    let tracks = trackList[i];
+                    if (tracks && tracks.length > 0) {
+                        for (let j = 0; j < tracks.length; j++) {
+                            let track = tracks[j];
+                            if (typeof track.stop === 'function') {
+                                track.stop();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    };
+</script>
+
+</html>

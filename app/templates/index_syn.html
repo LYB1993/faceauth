@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        /* .control {
+            position: relative
+        }
+        
+        video,
+        canvas {
+            position: absolute
+        } */
+    </style>
+</head>
+
+<body>
+    <div class="control">
+        <div>
+            <button id='start'>发送/停止</button>
+        </div>
+        <div>
+            <video style="z-index: 1;" id="redimage" autoplay playsinline></video>
+            <video style="z-index: 2;" id="showimage" autoplay playsinline></video>
+            <canvas style="z-index: -1;" id="sendimage"></canvas>
+            <canvas style="z-index: 3;" id="showfacebox"></canvas>
+        </div>
+
+    </div>
+</body>
+<script src="https://cdn.bootcss.com/socket.io/2.2.0/socket.io.slim.js"></script>
+<script src="static/js/index_syn.js"></script>
+
+</html>

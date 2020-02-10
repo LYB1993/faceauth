@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        /* .control {
+            position: relative
+        }
+        
+        video,
+        canvas {
+            position: absolute
+        } */
+    </style>
+</head>
+
+<body>
+    <div class="control">
+        <div>
+            <button id='start'>发送/停止</button>
+        </div>
+        <div>
+            <video style="z-index: 1;" id="redimage" autoplay playsinline></video>
+            <video style="z-index: 2;" id="showimage" autoplay playsinline></video>
+            <canvas style="z-index: -1;" id="sendimage"></canvas>
+            <canvas style="z-index: 3;" id="showfacebox"></canvas>
+        </div>
+
+    </div>
+</body>
+<script src="https://cdn.bootcss.com/socket.io/2.2.0/socket.io.slim.js"></script>
+<script>
+    window.addEventListener('load', () => {
+        let web_socket;
+        if ('WebSocket' in window) {
+            web_socket = new WebSocket('ws://127.0.0.1:8081/goods')
+            web_socket.onopen = function() {
+                console.log("client：打开连接");
+            };
+            web_socket.onmessage = function(e) {
+                console.log("client：接收到服务端的消息 " + e.data);
+            };
+            web_socket.onclose = function(params) {
+                console.log("client：关闭连接");
+            };
+        } else {
+            console.log('Not support websocket')
+        }
+
+
+    })
+</script>
+
+</html>

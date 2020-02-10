@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        .control {
+            position: relative
+        }
+        
+        video,
+        canvas {
+            position: absolute
+        }
+    </style>
+</head>
+
+<body>
+    <main class="control">
+        <div class="controls">
+            <button id='start'>发送/停止</button>
+            <button id="button">Get camera</button>
+            <select id="select">
+            <option></option>
+          </select>
+        </div>
+        <video style="z-index: 1;" id="video" autoplay playsinline></video>
+        <canvas style="z-index: -1;" id="datasrc"></canvas>
+        <canvas style="z-index: 2;" id="show"></canvas>
+    </main>
+</body>
+<script src="https://cdn.bootcss.com/socket.io/2.2.0/socket.io.js"></script>
+
+<script>
+    let currentStream;
+    // const noticeSocket = io.connect('http://127.0.0.1:5001/notice');
+    const noticeSocket = undefined;
+    let isStart = false;
+    const choose = document.getElementById('button');
+    const video = document.getElementById('video');
+    const select = document.getElementById('select');
+    const start = document.getElementById('start');
+    const canva = document.getElementById('datasrc')
+    const context = canva.getContext('2d');
+    const canva2 = document.getElementById('show')
+    const show_context = canva2.getContext('2d');
+
+    navigator.mediaDevices.enumerateDevices().then(gotDevices);
+    start.addEventListener('click', event => {
+        if (isStart) {
+            isStart = false
+        } else {
+            isStart = true
+        }
+    })
+
+
+    choose.addEventListener('click', event => {
+        if (typeof currentStream !== 'undefined') {
+            stopMediaTracks(currentStream);
+        }
+        const videoConstraints = {};
+        if (select.value === '') {
+            videoConstraints.facingMode = 'environment';
+        } else {
+            videoConstraints.deviceId = {
+                exact: select.value
+            };
+        }
+        var constraints = {
+            video: videoConstraints,
+            audio: false
+        };
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia(constraints)
+                .then(stream => {
+                    currentStream = stream;
+                    video.srcObject = stream;
+                    return navigator.mediaDevices.enumerateDevices();
+                }).then(gotDevices).catch(error => {
+                    console.log('Not support userMedia')
+                })
+        } else if (navigator.getUserMedia) {
+            navigator.getUserMedia(constraints, stream => {
+                currentStream = stream;
+                video.srcObject = stream;
+                gotDevices(stream)
+            }, err => {
+                console.log('Not support userMedia')
+            });
+        } else {
+            console.log('Not support userMedia');
+        }
+        video.addEventListener('timeupdate', event => {
+            canva2.setAttribute("width", video.clientWidth);
+            canva2.setAttribute("height", video.clientHeight);
+            canva.setAttribute("width", video.clientWidth);
+            canva.setAttribute("height", video.clientHeight);
+            context.drawImage(video, 0, 0);
+            var base64 = canva.toDataURL('images/png');
+            let timestamp = Math.round(new Date() / 1000)
+            if (isStart && timestamp % 3 === 0) {
+                if (noticeSocket) {
+                    noticeSocket.emit('unknown_img', {
+                        data: base64
+                    })
+                }
+            }
+        })
+        if (noticeSocket) {
+            noticeSocket.on('server', req => {
+                console.log(req.data)
+                JSON.parse(req.data).forEach(map => {
+                    let face = {};
+                    face.x = parseInt(map['left'])
+                    face.y = parseInt(map['top'])
+                    face.width = parseInt(map['bottom']) - parseInt(map['top'])
+                    face.height = parseInt(map['right']) - parseInt(map['left'])
+                    face.name = map['name']
+                    draw_face_box(face)
+                })
+            })
+        }
+    })
+
+    function stopMediaTracks(stream) {
+        stream.getTracks().forEach(track => {
+            track.stop();
+        });
+    }
+
+    function draw_face_box(face) {
+        show_context.strokeStyle = '#a64ceb';
+        show_context.strokeRect(face.x, face.y, face.width, face.height);
+        show_context.font = '11px Helvetica';
+        show_context.fillStyle = "#fff";
+        show_context.fillText(face.name, face.x + face.width / 2, face.y + face.height + 11);
+    };
+
+
+
+    function gotDevices(mediaDevices) {
+        select.innerHTML = '';
+        select.appendChild(document.createElement('option'));
+        let count = 1;
+        mediaDevices.forEach(mediaDevice => {
+            if (mediaDevice.kind === 'videoinput') {
+                const option = document.createElement('option');
+                option.value = mediaDevice.deviceId;
+                const label = mediaDevice.label || `Camera ${count++}`;
+                const textNode = document.createTextNode(label);
+                option.appendChild(textNode);
+                select.appendChild(option);
+            }
+        });
+    }
+</script>
+
+</html
