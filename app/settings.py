@@ -8,8 +8,8 @@ class IR_setting(setting):
 
 
 class GEN_setting(setting):
-    # 移动检测 MOVE
-    BIO_ASSAY_STYLE = 'MOVE'
+    # 移动检测 GEN
+    BIO_ASSAY_STYLE = 'GEN'
     # 眨眼阈值
     FACE_EYS_WINK = 0.3
     # 张嘴阈值

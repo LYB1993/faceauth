@@ -6,7 +6,7 @@
         .control {
             position: relative
         }
-        
+
         video,
         canvas {
             position: absolute
@@ -15,25 +15,27 @@
 </head>
 
 <body>
-    <main class="control">
-        <div class="controls">
-            <button id='start'>发送/停止</button>
-            <button id="button">Get camera</button>
-            <select id="select">
+<main class="control">
+    <div class="controls">
+        <button id='start'>发送/停止</button>
+        <button id="button">Get camera</button>
+        <select id="select">
             <option></option>
-          </select>
-        </div>
-        <video style="z-index: 1;" id="video" autoplay playsinline></video>
-        <canvas style="z-index: -1;" id="datasrc"></canvas>
-        <canvas style="z-index: 2;" id="show"></canvas>
-    </main>
+        </select>
+        <p id="tips"></p>
+    </div>
+    <video style="z-index: 1;" id="video" autoplay playsinline></video>
+    <canvas style="z-index: -1;" id="datasrc"></canvas>
+    <canvas style="z-index: 2;" id="show"></canvas>
+</main>
 </body>
 <script src="https://cdn.bootcss.com/socket.io/2.2.0/socket.io.js"></script>
 
 <script>
     let currentStream;
-    // const noticeSocket = io.connect('http://127.0.0.1:5001/notice');
-    const noticeSocket = undefined;
+    let send_msg = '{"wink_count":0,"wink_count_success":0,"mouth_count":0,"mouth_count_success":0,"head_count":0,"head_count_success":0}'
+    const noticeSocket = io.connect('http://127.0.0.1:5001/notice');
+    // const noticeSocket = undefined;
     let isStart = false;
     const choose = document.getElementById('button');
     const video = document.getElementById('video');
@@ -72,13 +74,13 @@
         };
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
             navigator.mediaDevices.getUserMedia(constraints)
-                .then(stream => {
-                    currentStream = stream;
-                    video.srcObject = stream;
-                    return navigator.mediaDevices.enumerateDevices();
-                }).then(gotDevices).catch(error => {
-                    console.log('Not support userMedia')
-                })
+                    .then(stream => {
+                        currentStream = stream;
+                        video.srcObject = stream;
+                        return navigator.mediaDevices.enumerateDevices();
+                    }).then(gotDevices).catch(error => {
+                console.log('Not support userMedia')
+            })
         } else if (navigator.getUserMedia) {
             navigator.getUserMedia(constraints, stream => {
                 currentStream = stream;
@@ -101,23 +103,17 @@
             if (isStart && timestamp % 3 === 0) {
                 if (noticeSocket) {
                     noticeSocket.emit('unknown_img', {
-                        data: base64
+                        data: base64,
+                        bioAssay: send_msg
                     })
                 }
             }
         })
         if (noticeSocket) {
             noticeSocket.on('server', req => {
-                console.log(req.data)
-                JSON.parse(req.data).forEach(map => {
-                    let face = {};
-                    face.x = parseInt(map['left'])
-                    face.y = parseInt(map['top'])
-                    face.width = parseInt(map['bottom']) - parseInt(map['top'])
-                    face.height = parseInt(map['right']) - parseInt(map['left'])
-                    face.name = map['name']
-                    draw_face_box(face)
-                })
+                console.log(JSON.parse(req.data))
+                send_msg = req.data
+                document.getElementById('tips').innerHTML = JSON.parse(req.data)['tips_msg']
             })
         }
     })
@@ -137,7 +133,6 @@
     };
 
 
-
     function gotDevices(mediaDevices) {
         select.innerHTML = '';
         select.appendChild(document.createElement('option'));
@@ -155,4 +150,4 @@
     }
 </script>
 
-</html
+</html>
