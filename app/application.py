@@ -199,6 +199,11 @@ def _getconfig():
     return json.dumps(result)
 
 
+@app.route('/model', methods=['GET'])
+def model_index():
+    return render_template('index_model.html')
+
+
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_image():
     if request.method != 'POST':
@@ -220,4 +225,4 @@ else:
 
 if __name__ == '__main__':
     app.config.from_object(get_config('gen'))
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    app.run(host='0.0.0.0', port=5001, debug=True, ssl_context=('server-cert.pem', 'server-key.pem'))

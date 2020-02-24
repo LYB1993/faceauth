@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>模块化引入</title>
+</head>
+<body>
+<div>
+    <face-div display-box="true"></face-div>
+</div>
+</body>
+<script src="https://cdn.bootcss.com/jquery-browser/0.1.0/jquery.browser.min.js"></script>
+<script src="../static/js/jquery.min.js"></script>
+<script src="../static/js/face.js"></script>
+<script>
+    let face;
+    $(document).ready(function () {
+                face = new Face()
+                face.init()
+            }
+    )
+</script>
+</html>
