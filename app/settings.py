@@ -1,5 +1,6 @@
 class setting():
     UPLOAD_FOLDER = 'E:\\MyProject\\FaceDemo\\image'
+    TOLERANCE = 0.6
 
 
 class IR_setting(setting):

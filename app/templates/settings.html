@@ -32,6 +32,11 @@
             <input name="mouthear" class="ear" type="range" min="0" max="1" step="0.1" onchange="change()">
             <input class="ear-value" readonly>
         </div>
+        <div>
+            <label>识别阈值：</label>
+            <input name="tolerance" class="ear" type="range" min="0" max="1" step="0.1" onchange="change()">
+            <input class="ear-value" readonly>
+        </div>
         <input type="submit" value="save">
     </form>
 </div>
@@ -47,6 +52,7 @@
         ears[0].value = jsondata['_eyeear_'];
         ears[1].value = jsondata['_headear_'];
         ears[2].value = jsondata['_mouthear_'];
+        ears[3].value = jsondata['_tolerance'];
     }
     for (let i = 0; i < ears.length; i++) {
         ears_val[i].value = ears[i].value

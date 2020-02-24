@@ -5,12 +5,12 @@ import json
 import os
 import sys
 
+import distance
 import face_recognition
 import numpy as np
 from PIL import Image
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit
-from scipy.spatial import distance
 from werkzeug.utils import redirect
 
 from app.settings import get_config
@@ -128,9 +128,10 @@ def _ir(unknown_img, unknown_face_locations):
     :return: 认证信息
     """
     results = []
+    tolerance = app.config['TOLERANCE']
     unknown_encodings = face_recognition.face_encodings(unknown_img, unknown_face_locations)
     for (top, right, bottom, left), unknown_encoding in zip(unknown_face_locations, unknown_encodings):
-        compare_faces = face_recognition.compare_faces(known_face_encodings, unknown_encoding)
+        compare_faces = face_recognition.compare_faces(known_face_encodings, unknown_encoding, tolerance)
         name = 'Unknown'
         face_distances = face_recognition.face_distance(known_face_encodings, unknown_encoding)
         best_match_index = np.argmin(face_distances)
@@ -179,10 +180,12 @@ def to_settings():
         _eyeear_ = request.form['eyeear']
         _headear_ = request.form['headear']
         _mouthear_ = request.form['mouthear']
+        _tolerance = request.form['tolerance']
         app.config['BIO_ASSAY_STYLE'] = _model_
         app.config['FACE_EYS_WINK'] = _eyeear_
         app.config['FACE_HEAD_MOVE'] = _headear_
         app.config['FACE_MOUTH_OPEN'] = _mouthear_
+        app.config['TOLERANCE'] = _tolerance
         return render_template("/settings.html", success='true', result=_getconfig())
 
 
@@ -191,10 +194,12 @@ def _getconfig():
     _eyeear_ = app.config['FACE_EYS_WINK']
     _headear_ = app.config['FACE_HEAD_MOVE']
     _mouthear_ = app.config['FACE_MOUTH_OPEN']
+    _tolerance = app.config['TOLERANCE']
     result = {'_model_': _model_,
               '_eyeear_': _eyeear_,
               '_headear_': _headear_,
-              '_mouthear_': _mouthear_
+              '_mouthear_': _mouthear_,
+              '_tolerance': _tolerance
               }
     return json.dumps(result)
 
