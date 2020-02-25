@@ -2,10 +2,11 @@
  * face js 初始化方法
  */
 function Face() {
-	let _def_video_att = {
+	let config = {
 		width: '640px',
 		height: '480px',
-		autoplay: 'autoplay'
+		success: undefined,
+		error: undefined
 	};
 
 	/**
@@ -50,7 +51,7 @@ function Face() {
 	 * @param {string} model 验证模式 有 "IR" 和"GEN"  
 	 * @param {boolean} ssl 是否开启https访问,默认true 
 	 */
-	function init(host, config, model = "IR", ssl = true) {
+	function init(host, config, ssl = true, model = "IR") {
 		if ($ !== undefined) {
 			face_tag = $('face-div');
 		}
@@ -59,7 +60,7 @@ function Face() {
 			return;
 		}
 		model = model;
-		jQuery.extend(_def_video_att, config);
+		jQuery.extend(config, config);
 		inittable();
 		if (io !== undefined) {
 			let prefix = 'http://';
@@ -74,15 +75,16 @@ function Face() {
 		videos.push(_scr_data_v);
 		videos.push(_display_v);
 		_send_canvas = $('<canvas/>');
-		_send_canvas.attr('width', _def_video_att['width'])
-		_send_canvas.attr('height', _def_video_att['height'])
+		_send_canvas.attr('width', config['width'])
+		_send_canvas.attr('height', config['height'])
 		_send_canvas.attr('id', 'send-canvas')
-
+		_send_canvas.hide()
 		if (face_tag.attr('display-box') === 'true') {
 			_box_canvas = $('<canvas/>');
-			_box_canvas.attr('width', _def_video_att['width'])
-			_box_canvas.attr('height', _def_video_att['height'])
+			_box_canvas.attr('width', config['width'])
+			_box_canvas.attr('height', config['height'])
 			_box_canvas.attr('id', 'box-canvas')
+			_box_canvas.hide()
 			face_tag.append(_box_canvas);
 		}
 		face_tag.append(_scr_data_v);
@@ -91,18 +93,23 @@ function Face() {
 		_init_webcam();
 	}
 
-	function inittable()[
-		let ir_config = {
-			z - index: 1
+	function inittable() {
+		_scr_data_v = $('<video/>', {
+			width: config['width'],
+			height: config['height'],
+			autoplay: 'autoplay',
 			id: 'IR'
-		}
-		let rgb_config = {
-			z - index: 2,
+		});
+		_scr_data_v.hide()
+		_display_v = $('<video/>', {
+			width: config['width'],
+			height: config['height'],
+			autoplay: 'autoplay',
 			id: 'RGB'
-		}
-		jQuery.extend(ir_config, _def_video_att); _scr_data_v = $('<video/>', ir_config); jQuery.extend(rgb_config,
-			_def_video_att); _display_v = $('<video/>', rgb_config);
-	]
+		});
+	}
+
+
 
 	/**
 	 * 初始化摄像头
@@ -187,9 +194,12 @@ function Face() {
 			noticeSocket.on('server', req => {
 				console.log(req)
 				let reqdata = JSON.parse(req.data);
-				if (reqdata['pass'] || reqdata['pass'] === 'true') {
+				if (reqdata[0]['pass'] || reqdata[0]['pass'] === 'true') {
 					result['pass'] = true;
-					noticeSocket.close();
+					_fn_close_stream();
+					if (config.success != undefined) {
+						config.success(result)
+					}
 					return;
 				}
 				if (model !== 'IR') {
@@ -212,7 +222,7 @@ function Face() {
 	/**
 	 * 关闭视频流和io连接
 	 */
-	function close_stream() {
+	function _fn_close_stream() {
 		if (noticeSocket !== undefined && noticeSocket.connected) {
 			noticeSocket.close();
 		}
@@ -225,7 +235,7 @@ function Face() {
 
 	return {
 		init: init,
-		close: close_stream,
+		close: _fn_close_stream,
 		result: _result
 	}
 };

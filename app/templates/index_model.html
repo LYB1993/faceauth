@@ -1,12 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+	<style>
+		video,
+		canvas {
+			position: absolute
+		}
+
+		face-div {
+			position: relative
+		}
+	</style>
 	<head>
 		<meta charset="UTF-8">
 		<title>模块化引入</title>
 	</head>
 	<body>
 		<div>
-			<face-div display-box="true"></face-div>
+			<face-div display-box="false"></face-div>
 		</div>
 	</body>
 	<script src="../static/js/jquery.min.js"></script>
@@ -16,7 +26,11 @@
 		let face;
 		$(document).ready(function() {
 			face = new Face()
-			face.init('127.0.0.1:5001')
+			face.init('127.0.0.1:5001', {
+				success: function(result) {
+					console.log(result)
+				}
+			})
 			let result = face.result()
 			if (result.success) {
 				console.log("通过")
