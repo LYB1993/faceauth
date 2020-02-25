@@ -3,12 +3,14 @@
  */
 function Face() {
 	const _def_video_att = {
-		width: 240,
-		height: 240,
+		width: '640px',
+		height: '480px',
 		autoplay: 'autoplay'
 	};
 	const _scr_data_v = $('<video/>', _def_video_att);
+	_scr_data_v.attr('id', 'IR')
 	const _display_v = $('<video/>', _def_video_att);
+	_display_v.attr('id', 'RGB')
 	const _p = $('<p/>')
 	let _send_canvas;
 	let _box_canvas;
@@ -38,22 +40,23 @@ function Face() {
 		}
 		// jQuery.extend(_def_video_att, config);
 		if (io !== undefined) {
-			let url = 'http://' + host + '/notice';
+			let url = 'https://' + host + '/notice';
 			noticeSocket = io(url, {
 				autoConnect: false
 			});
 		}
 		videos.push(_scr_data_v);
 		videos.push(_display_v);
-		_send_canvas = $('<canvas/>', {
-			width: _def_video_att['width'],
-			height: _def_video_att['height']
-		});
+		_send_canvas = $('<canvas/>');
+		_send_canvas.attr('width',_def_video_att['width'])
+		_send_canvas.attr('height',_def_video_att['height'])
+		_send_canvas.attr('id','send-canvas')
+		
 		if (face_tag.attr('display-box') === 'true') {
-			_box_canvas = $('<canvas/>', {
-				width: _def_video_att['width'],
-				height: _def_video_att['height']
-			});
+			_box_canvas = $('<canvas/>');
+			_box_canvas.attr('width',_def_video_att['width'])
+			_box_canvas.attr('height',_def_video_att['height'])
+			_box_canvas.attr('id','box-canvas')
 			face_tag.append(_box_canvas);
 		}
 		face_tag.append(_scr_data_v);
@@ -68,40 +71,48 @@ function Face() {
 			navigator.mediaDevices.enumerateDevices().then(function(devices) {
 				devices.forEach(device => {
 					if (device.kind === 'videoinput') {
-						let temp = {};
-						temp.video = {
-							deviceId: {
-								exact: device.deviceId
-							}
-						};
-						temp.audio = false;
-						video_init.push(temp)
+						if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {}
+						if (device.label.indexOf('IR') != -1) {
+							initStream(device.deviceId, _scr_data_v[0])
+						} else {
+							initStream(device.deviceId, _display_v[0])
+						}
 					}
 				});
-				if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-					for (let i = 0; i < video_init.length; i++) {
-						navigator.mediaDevices.getUserMedia(video_init[i]).then(stream => {
-							_close_stream.push(stream);
-							document.getElementsByTagName('video')[i].srcObject = stream;
-						}).catch(error => {
-							console.error('Not support userMedia')
-						});
-					}
-				}
 			});
 		}
 		_sendImg();
-		_receive();
+	}
+
+	function initStream(deviceId, obj) {
+		if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+			navigator.mediaDevices.getUserMedia({
+				video: {
+					deviceId: {
+						exact: deviceId
+					}
+				},
+				audio: false
+			}).then(stream => {
+				_close_stream.push(stream);
+				obj.srcObject = stream;
+			}).catch(error => {
+				console.error('Not support userMedia')
+			});
+		}
 	}
 
 	function _sendImg() {
-		let _send_context = _send_canvas.getContext('2d')
-		_scr_data_v.addEventListener('timeupdate', event => {
-			_send_context.drawImage(_scr_data_v, 0, 0);
-			let base64 = _send_canvas.toDataURL('images/png');
+		let _send_context = _send_canvas[0].getContext('2d')
+		_scr_data_v[0].addEventListener('timeupdate', event => {
+			_send_context.drawImage(_scr_data_v[0], 0, 0);
+			let base64 = _send_canvas[0].toDataURL('images/png');
 			let timestamp = Math.round(new Date() / 1000)
 			if (timestamp % 3 === 0) {
-				if (noticeSocket) {
+				if(noticeSocket.disconnected){
+					noticeSocket.open()
+				}
+				if (noticeSocket.connected) {
 					if (model === 'IR') {
 						noticeSocket.emit('unknown_img', {
 							data: base64
@@ -116,14 +127,13 @@ function Face() {
 				}
 			}
 		})
-	}
-
-	function _receive() {
-		if (noticeSocket) {
+		console.log('runing')
+		if (noticeSocket.connected) {
 			noticeSocket.on('server', req => {
+				console.log(req)
 				let reqdata = JSON.parse(req.data);
-				if (reqdata['success'] || reqdata['success'] === 'true') {
-					result['success'] = true;
+				if (reqdata['pass'] || reqdata['pass'] === 'true') {
+					result['pass'] = true;
 					noticeSocket.close();
 					return;
 				}
@@ -135,12 +145,28 @@ function Face() {
 		}
 	}
 
+	function _receive() {
+		
+	}
+
 	function _result() {
 		return result;
 	}
 
+	function close_stream() {
+		if (noticeSocket !== undefined && noticeSocket.connected) {
+			noticeSocket.close();
+		}
+		_close_stream.forEach(stream => {
+			stream.getTracks().forEach(track => {
+				track.stop();
+			});
+		})
+	}
+
 	return {
 		init: init,
+		close: close_stream,
 		result: _result
 	}
 };

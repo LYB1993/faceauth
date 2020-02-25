@@ -42,7 +42,6 @@ max_head_count = 5
 
 @socket_io.on('unknown_img', namespace='/notice')
 def video_stream(data):
-    bio_assay_ = data['bioAssay']
     image_data = base64.urlsafe_b64decode(data['data'][22:])
     unknown_img = np.array(Image.open(io.BytesIO(image_data)).convert("RGB"))
     unknown_face_locations = face_recognition.face_locations(unknown_img)
@@ -50,6 +49,7 @@ def video_stream(data):
         if app.config['BIO_ASSAY_STYLE'] == 'IR':
             _ir(unknown_img, unknown_face_locations)
         else:
+            bio_assay_ = data['bioAssay']
             _gen(unknown_img, unknown_face_locations, bio_assay_)
 
 
@@ -86,6 +86,7 @@ def _gen(unknown_img, unknown_face_locations, bio_assay_):
                        'head_count': 0,
                        'head_count_success': 0,
                        'head_success': False,
+                       'pass': False,
                        'tips_msg': 'Please Wink'}
         elif mouth_count < max_mouth_count:
             mouth_count += 1
@@ -101,6 +102,7 @@ def _gen(unknown_img, unknown_face_locations, bio_assay_):
                 'head_count': 0,
                 'head_count_success': 0,
                 'head_success': False,
+                'pass': False,
                 'tips_msg': 'Please opened and shut Mouth'}
         else:
             head_count += 1
@@ -115,7 +117,10 @@ def _gen(unknown_img, unknown_face_locations, bio_assay_):
                        'head_count': head_count,
                        'head_count_success': head_count_success,
                        'head_success': head_count_success >= min_head_count,
+                       'pass': False,
                        'tips_msg': 'Please Shaking head'}
+    if results['wink_success'] and results['mouth_success'] and results['head_success']:
+        results['psss'] = True
     emit('server', {'data': json.dumps(results)}, namespace='/notice')
     return
 
@@ -131,17 +136,20 @@ def _ir(unknown_img, unknown_face_locations):
     tolerance = app.config['TOLERANCE']
     unknown_encodings = face_recognition.face_encodings(unknown_img, unknown_face_locations)
     for (top, right, bottom, left), unknown_encoding in zip(unknown_face_locations, unknown_encodings):
-        compare_faces = face_recognition.compare_faces(known_face_encodings, unknown_encoding, tolerance)
+        compare_faces = face_recognition.compare_faces(known_face_encodings, unknown_encoding)
         name = 'Unknown'
+        _pass = False
         face_distances = face_recognition.face_distance(known_face_encodings, unknown_encoding)
         best_match_index = np.argmin(face_distances)
         if compare_faces[best_match_index]:
             name = known_face_names[best_match_index]
+            _pass = True
         result = {'top': top,
                   'right': right,
                   'bottom': bottom,
                   'left': left,
-                  'name': name
+                  'name': name,
+                  'pass': _pass
                   }
         results.append(result)
     emit('server', {'data': json.dumps(results)}, namespace='/notice')
@@ -177,30 +185,33 @@ def to_settings():
         return render_template('/settings.html', result=_getconfig())
     else:
         _model_ = request.form['model']
-        _eyeear_ = request.form['eyeear']
-        _headear_ = request.form['headear']
-        _mouthear_ = request.form['mouthear']
         _tolerance = request.form['tolerance']
         app.config['BIO_ASSAY_STYLE'] = _model_
-        app.config['FACE_EYS_WINK'] = _eyeear_
-        app.config['FACE_HEAD_MOVE'] = _headear_
-        app.config['FACE_MOUTH_OPEN'] = _mouthear_
         app.config['TOLERANCE'] = _tolerance
+        if app.config['BIO_ASSAY_STYLE'] != 'IR':
+            app.config['FACE_EYS_WINK'] = request.form['eyeear']
+            app.config['FACE_HEAD_MOVE'] = request.form['headear']
+            app.config['FACE_MOUTH_OPEN'] = request.form['mouthear']
         return render_template("/settings.html", success='true', result=_getconfig())
 
 
 def _getconfig():
     _model_ = app.config['BIO_ASSAY_STYLE']
-    _eyeear_ = app.config['FACE_EYS_WINK']
-    _headear_ = app.config['FACE_HEAD_MOVE']
-    _mouthear_ = app.config['FACE_MOUTH_OPEN']
     _tolerance = app.config['TOLERANCE']
-    result = {'_model_': _model_,
-              '_eyeear_': _eyeear_,
-              '_headear_': _headear_,
-              '_mouthear_': _mouthear_,
-              '_tolerance': _tolerance
-              }
+    if app.config['BIO_ASSAY_STYLE'] != 'IR':
+        _eyeear_ = app.config['FACE_EYS_WINK']
+        _headear_ = app.config['FACE_HEAD_MOVE']
+        _mouthear_ = app.config['FACE_MOUTH_OPEN']
+        result = {'_model_': _model_,
+                  '_eyeear_': _eyeear_,
+                  '_headear_': _headear_,
+                  '_mouthear_': _mouthear_,
+                  '_tolerance': _tolerance
+                  }
+    else:
+        result = {'_model_': _model_,
+                  '_tolerance': _tolerance
+                  }
     return json.dumps(result)
 
 

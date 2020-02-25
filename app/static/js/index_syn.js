@@ -1,8 +1,6 @@
 let currentStream_show;
 let currentStream_send;
-const noticeSocket = io('http://127.0.0.1:5001/notice', {
-    autoConnect: false
-});
+const noticeSocket = io('http://127.0.0.1:5001/notice');
 // const noticeSocket = undefined;
 let isStart = false;
 const start = document.getElementById('start');

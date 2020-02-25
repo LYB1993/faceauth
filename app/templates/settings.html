@@ -1,68 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>设置页面</title>
-</head>
-<body>
+	<head>
+		<meta charset="UTF-8">
+		<title>设置页面</title>
+	</head>
+	<body>
 
-<div>
-    <p>{{success}}</p>
-    <input style="display: none" id="result" value="{{result}}">
-    <form method="post" enctype="multipart/form-data">
-        <div>
-            <label>模式设置:</label>
-            <select id="model" name="model">
-                <option value="IR">IR</option>
-                <option value="GEN">GEN</option>
-            </select>
-        </div>
-        <div>
-            <label>眨眼阈值：</label>
-            <input name="eyeear" class="ear" type="range" min="0" max="1" step="0.1" onchange="change()">
-            <input class="ear-value" readonly>
-        </div>
-        <div>
-            <label>摇头阈值：</label>
-            <input name="headear" class="ear" type="range" min="0" max="1" step="0.1" onchange="change()">
-            <input class="ear-value" readonly>
-        </div>
-        <div>
-            <label>张嘴阈值：</label>
-            <input name="mouthear" class="ear" type="range" min="0" max="1" step="0.1" onchange="change()">
-            <input class="ear-value" readonly>
-        </div>
-        <div>
-            <label>识别阈值：</label>
-            <input name="tolerance" class="ear" type="range" min="0" max="1" step="0.1" onchange="change()">
-            <input class="ear-value" readonly>
-        </div>
-        <input type="submit" value="save">
-    </form>
-</div>
-</body>
-<script>
-    const model = document.getElementById('model');
-    const ears = document.getElementsByClassName('ear');
-    const ears_val = document.getElementsByClassName('ear-value');
-    const result = document.getElementById('result');
-    if (result.value != undefined && result.value != '') {
-        let jsondata = JSON.parse(result.value)
-        model.value = jsondata['_model_'];
-        ears[0].value = jsondata['_eyeear_'];
-        ears[1].value = jsondata['_headear_'];
-        ears[2].value = jsondata['_mouthear_'];
-        ears[3].value = jsondata['_tolerance'];
-    }
-    for (let i = 0; i < ears.length; i++) {
-        ears_val[i].value = ears[i].value
-    }
+		<div>
+			<p>{{success}}</p>
+			<input style="display: none" id="result" value="{{result}}">
+			<form method="post" enctype="multipart/form-data">
+				<div>
+					<label>模式设置:</label>
+					<select id="model" name="model">
+						<option value="IR">IR</option>
+						<option value="GEN">GEN</option>
+					</select>
+				</div>
+				<div>
+					<label>眨眼阈值：</label>
+					<input name="eyeear" class="ear" type="range" min="0" max="1" step="0.1" onchange="change()">
+					<input class="ear-value" readonly>
+				</div>
+				<div>
+					<label>摇头阈值：</label>
+					<input name="headear" class="ear" type="range" min="0" max="1" step="0.1" onchange="change()">
+					<input class="ear-value" readonly>
+				</div>
+				<div>
+					<label>张嘴阈值：</label>
+					<input name="mouthear" class="ear" type="range" min="0" max="1" step="0.1" onchange="change()">
+					<input class="ear-value" readonly>
+				</div>
+				<div>
+					<label>识别阈值：</label>
+					<input name="tolerance" class="ear" type="range" min="0" max="1" step="0.1" onchange="change()">
+					<input class="ear-value" readonly>
+				</div>
+				<input type="submit" value="save">
+			</form>
+		</div>
+	</body>
+	<script>
+		const model = document.getElementById('model');
+		const ears = document.getElementsByClassName('ear');
+		const ears_val = document.getElementsByClassName('ear-value');
+		const result = document.getElementById('result');
+		if (result.value != undefined && result.value != '') {
+			let jsondata = JSON.parse(result.value)
+			model.value = jsondata['_model_'];
+			if (jsondata['_eyeear_'] !== undefined) {
+				ears[0].value = jsondata['_eyeear_'];
+				ears[1].value = jsondata['_headear_'];
+				ears[2].value = jsondata['_mouthear_'];
+			}
+			ears[3].value = jsondata['_tolerance'];
+		}
+		for (let i = 0; i < ears.length; i++) {
+			ears_val[i].value = ears[i].value
+		}
 
-    function change() {
-        for (let i = 0; i < ears.length; i++) {
-            ears_val[i].value = ears[i].value
-        }
-    }
-
-</script>
+		function change() {
+			for (let i = 0; i < ears.length; i++) {
+				ears_val[i].value = ears[i].value
+			}
+		}
+	</script>
 </html>
