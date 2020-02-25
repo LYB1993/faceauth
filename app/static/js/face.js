@@ -2,26 +2,39 @@
  * face js 初始化方法
  */
 function Face() {
-	const _def_video_att = {
+	let _def_video_att = {
 		width: '640px',
 		height: '480px',
 		autoplay: 'autoplay'
 	};
-	const _scr_data_v = $('<video/>', _def_video_att);
-	_scr_data_v.attr('id', 'IR')
-	const _display_v = $('<video/>', _def_video_att);
-	_display_v.attr('id', 'RGB')
+
+	/**
+	 * 需要初始化的标签
+	 */
+	let _scr_data_v;
+	let _display_v;
 	const _p = $('<p/>')
+
+
+	/**
+	 * canvas标签L
+	 */
 	let _send_canvas;
 	let _box_canvas;
-	const _def_back_img = '';
+
+
 	let noticeSocket;
+
 	let model = 'IR';
+	let _receive_ready = false
 
 	let send_msg =
 		'{"wink_count":0,"wink_count_success":0,"mouth_count":0,"mouth_count_success":0,"head_count":0,"head_count_success":0}'
 
 
+	/**
+	 * 自定义标签
+	 */
 	let face_tag;
 	let videos = [];
 	let _close_stream = [];
@@ -30,7 +43,14 @@ function Face() {
 		'success': false
 	}
 
-	function init(host) {
+	/**
+	 * 初始化方法
+	 * @param {Object} host 访问地址和端口
+	 * @param {Object} config 自定义配置,可配置video标签的属性  
+	 * @param {string} model 验证模式 有 "IR" 和"GEN"  
+	 * @param {boolean} ssl 是否开启https访问,默认true 
+	 */
+	function init(host, config, model = "IR", ssl = true) {
 		if ($ !== undefined) {
 			face_tag = $('face-div');
 		}
@@ -38,9 +58,15 @@ function Face() {
 			console.error('未初始化face-div标签');
 			return;
 		}
-		// jQuery.extend(_def_video_att, config);
+		model = model;
+		jQuery.extend(_def_video_att, config);
+		inittable();
 		if (io !== undefined) {
-			let url = 'https://' + host + '/notice';
+			let prefix = 'http://';
+			if (ssl) {
+				prefix = 'https://'
+			}
+			let url = prefix + host + '/notice';
 			noticeSocket = io(url, {
 				autoConnect: false
 			});
@@ -48,15 +74,15 @@ function Face() {
 		videos.push(_scr_data_v);
 		videos.push(_display_v);
 		_send_canvas = $('<canvas/>');
-		_send_canvas.attr('width',_def_video_att['width'])
-		_send_canvas.attr('height',_def_video_att['height'])
-		_send_canvas.attr('id','send-canvas')
-		
+		_send_canvas.attr('width', _def_video_att['width'])
+		_send_canvas.attr('height', _def_video_att['height'])
+		_send_canvas.attr('id', 'send-canvas')
+
 		if (face_tag.attr('display-box') === 'true') {
 			_box_canvas = $('<canvas/>');
-			_box_canvas.attr('width',_def_video_att['width'])
-			_box_canvas.attr('height',_def_video_att['height'])
-			_box_canvas.attr('id','box-canvas')
+			_box_canvas.attr('width', _def_video_att['width'])
+			_box_canvas.attr('height', _def_video_att['height'])
+			_box_canvas.attr('id', 'box-canvas')
 			face_tag.append(_box_canvas);
 		}
 		face_tag.append(_scr_data_v);
@@ -65,6 +91,22 @@ function Face() {
 		_init_webcam();
 	}
 
+	function inittable()[
+		let ir_config = {
+			z - index: 1
+			id: 'IR'
+		}
+		let rgb_config = {
+			z - index: 2,
+			id: 'RGB'
+		}
+		jQuery.extend(ir_config, _def_video_att); _scr_data_v = $('<video/>', ir_config); jQuery.extend(rgb_config,
+			_def_video_att); _display_v = $('<video/>', rgb_config);
+	]
+
+	/**
+	 * 初始化摄像头
+	 */
 	function _init_webcam() {
 		let video_init = [];
 		if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices()) {
@@ -81,8 +123,9 @@ function Face() {
 				});
 			});
 		}
-		_sendImg();
+		_send_img();
 	}
+
 
 	function initStream(deviceId, obj) {
 		if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -102,17 +145,23 @@ function Face() {
 		}
 	}
 
-	function _sendImg() {
+	/**
+	 * 发送验证图片
+	 */
+	function _send_img() {
 		let _send_context = _send_canvas[0].getContext('2d')
 		_scr_data_v[0].addEventListener('timeupdate', event => {
 			_send_context.drawImage(_scr_data_v[0], 0, 0);
 			let base64 = _send_canvas[0].toDataURL('images/png');
 			let timestamp = Math.round(new Date() / 1000)
 			if (timestamp % 3 === 0) {
-				if(noticeSocket.disconnected){
+				if (noticeSocket.disconnected) {
 					noticeSocket.open()
 				}
 				if (noticeSocket.connected) {
+					if (!_receive_ready) {
+						_receive()
+					}
 					if (model === 'IR') {
 						noticeSocket.emit('unknown_img', {
 							data: base64
@@ -127,8 +176,14 @@ function Face() {
 				}
 			}
 		})
-		console.log('runing')
+	}
+
+	/**
+	 * 接收服务端信息
+	 */
+	function _receive() {
 		if (noticeSocket.connected) {
+			_receive_ready = true
 			noticeSocket.on('server', req => {
 				console.log(req)
 				let reqdata = JSON.parse(req.data);
@@ -143,16 +198,20 @@ function Face() {
 				}
 			})
 		}
+
 	}
 
-	function _receive() {
-		
-	}
-
+	/**
+	 * 返回验证结果
+	 */
 	function _result() {
 		return result;
 	}
 
+
+	/**
+	 * 关闭视频流和io连接
+	 */
 	function close_stream() {
 		if (noticeSocket !== undefined && noticeSocket.connected) {
 			noticeSocket.close();
