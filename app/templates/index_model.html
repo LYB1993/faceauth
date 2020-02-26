@@ -1,15 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-	<style>
-		video,
-		canvas {
-			position: absolute
-		}
-
-		face-div {
-			position: relative
-		}
-	</style>
 	<head>
 		<meta charset="UTF-8">
 		<title>模块化引入</title>
@@ -23,18 +13,14 @@
 	<script src="https://cdn.bootcss.com/socket.io/2.2.0/socket.io.js"></script>
 	<script src="../static/js/face.js"></script>
 	<script>
-		let face;
 		$(document).ready(function() {
-			face = new Face()
-			face.init('127.0.0.1:5001', {
+
+			$.face('https://127.0.0.1:5001', {
+				model: 'IR',
 				success: function(result) {
 					console.log(result)
 				}
 			})
-			let result = face.result()
-			if (result.success) {
-				console.log("通过")
-			}
 		})
 	</script>
 </html>

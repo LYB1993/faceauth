@@ -2,9 +2,11 @@
  * face js 初始化方法
  */
 function Face() {
-	let config = {
+	let _def_config = {
 		width: '640px',
 		height: '480px',
+		debug: false,
+		model: 'IR',
 		success: undefined,
 		error: undefined
 	};
@@ -26,8 +28,9 @@ function Face() {
 
 	let noticeSocket;
 
-	let model = 'IR';
+	let _model = 'IR';
 	let _receive_ready = false
+	let _debug = false
 
 	let send_msg =
 		'{"wink_count":0,"wink_count_success":0,"mouth_count":0,"mouth_count_success":0,"head_count":0,"head_count_success":0}'
@@ -44,14 +47,14 @@ function Face() {
 		'success': false
 	}
 
+
+
 	/**
 	 * 初始化方法
 	 * @param {Object} host 访问地址和端口
-	 * @param {Object} config 自定义配置,可配置video标签的属性  
-	 * @param {string} model 验证模式 有 "IR" 和"GEN"  
-	 * @param {boolean} ssl 是否开启https访问,默认true 
+	 * @param {Object} config 自定义配置 
 	 */
-	function init(host, config, ssl = true, model = "IR") {
+	function init(url, config) {
 		if ($ !== undefined) {
 			face_tag = $('face-div');
 		}
@@ -59,30 +62,29 @@ function Face() {
 			console.error('未初始化face-div标签');
 			return;
 		}
-		model = model;
-		jQuery.extend(config, config);
+		jQuery.extend(_def_config, config);
+		_debug = _def_config.debug;
+		_model = _def_config.model;
 		inittable();
 		if (io !== undefined) {
-			let prefix = 'http://';
-			if (ssl) {
-				prefix = 'https://'
-			}
-			let url = prefix + host + '/notice';
-			noticeSocket = io(url, {
+			let _url = url + '/notice';
+			noticeSocket = io(_url, {
 				autoConnect: false
 			});
 		}
 		videos.push(_scr_data_v);
 		videos.push(_display_v);
 		_send_canvas = $('<canvas/>');
-		_send_canvas.attr('width', config['width'])
-		_send_canvas.attr('height', config['height'])
+		_send_canvas.attr('width', _def_config['width'])
+		_send_canvas.attr('height', _def_config['height'])
 		_send_canvas.attr('id', 'send-canvas')
-		_send_canvas.hide()
+		if (!_debug) {
+			_send_canvas.hide()
+		}
 		if (face_tag.attr('display-box') === 'true') {
 			_box_canvas = $('<canvas/>');
-			_box_canvas.attr('width', config['width'])
-			_box_canvas.attr('height', config['height'])
+			_box_canvas.attr('width', _def_config['width'])
+			_box_canvas.attr('height', _def_config['height'])
 			_box_canvas.attr('id', 'box-canvas')
 			_box_canvas.hide()
 			face_tag.append(_box_canvas);
@@ -95,15 +97,17 @@ function Face() {
 
 	function inittable() {
 		_scr_data_v = $('<video/>', {
-			width: config['width'],
-			height: config['height'],
+			width: _def_config['width'],
+			height: _def_config['height'],
 			autoplay: 'autoplay',
 			id: 'IR'
 		});
-		_scr_data_v.hide()
+		if (!_debug) {
+			_scr_data_v.hide()
+		}
 		_display_v = $('<video/>', {
-			width: config['width'],
-			height: config['height'],
+			width: _def_config['width'],
+			height: _def_config['height'],
 			autoplay: 'autoplay',
 			id: 'RGB'
 		});
@@ -169,7 +173,7 @@ function Face() {
 					if (!_receive_ready) {
 						_receive()
 					}
-					if (model === 'IR') {
+					if (_model === 'IR') {
 						noticeSocket.emit('unknown_img', {
 							data: base64
 						})
@@ -197,12 +201,12 @@ function Face() {
 				if (reqdata[0]['pass'] || reqdata[0]['pass'] === 'true') {
 					result['pass'] = true;
 					_fn_close_stream();
-					if (config.success != undefined) {
-						config.success(result)
+					if (_def_config.success != undefined) {
+						_def_config.success(result)
 					}
 					return;
 				}
-				if (model !== 'IR') {
+				if (_model !== 'IR') {
 					send_msg = req.data
 					_p.innerHTML = JSON.parse(req.data)['tips_msg'];
 				}
@@ -233,9 +237,28 @@ function Face() {
 		})
 	}
 
+
+
 	return {
 		init: init,
 		close: _fn_close_stream,
 		result: _result
 	}
 };
+
+
+jQuery.extend({
+	face: function(url, options) {
+		if (typeof url === "object") {
+			options = url;
+			url = undefined;
+		}
+		var s = jQuery.extend({url:url}, options);
+		s.url = ((url || s.url || location.href) + "")
+			.replace(/^\/\//, location.protocol + "//");
+		s.model = options.model || s.model;
+		s.debug = options.debug || s.debug || false;
+		let face = new Face();
+		face.init(url, s);
+	}
+})
