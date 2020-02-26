@@ -5,12 +5,12 @@ import json
 import os
 import sys
 
-import distance
 import face_recognition
 import numpy as np
 from PIL import Image
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit
+from scipy.spatial import distance
 from werkzeug.utils import redirect
 
 from app.settings import get_config
@@ -31,13 +31,13 @@ known_face_names = [
 ]
 # 眨眼检测的最少次数
 min_wink_count = 3
-max_wink_count = 5
+max_wink_count = 50
 # 张嘴检测的最小次数
 min_mouth_count = 3
-max_mouth_count = 5
+max_mouth_count = 50
 # 摇头检测的最小次数
 min_head_count = 3
-max_head_count = 5
+max_head_count = 50
 
 
 @socket_io.on('unknown_img', namespace='/notice')
@@ -73,29 +73,29 @@ def _gen(unknown_img, unknown_face_locations, bio_assay_):
         eye_ear = (check_wink(face_landmark['left_eye']) + check_wink(face_landmark['right_eye'])) / 2
         lip_aer = 0
         head_aer = 0
-        if wink_count < max_wink_count:
+        if wink_count < max_wink_count and wink_count_success < min_wink_count:
             wink_count += 1
             if eye_ear < app.config['FACE_EYS_WINK']:
                 wink_count_success += 1
-            results = {'wink_count': wink_count,
-                       'wink_count_success': wink_count_success,
-                       'wink_success': wink_count_success >= min_wink_count,
-                       'mouth_count': 0,
-                       'mouth_count_success': 0,
-                       'mouth_success': False,
-                       'head_count': 0,
-                       'head_count_success': 0,
-                       'head_success': False,
-                       'pass': False,
-                       'tips_msg': 'Please Wink'}
-        elif mouth_count < max_mouth_count:
+            result = {'wink_count': wink_count,
+                      'wink_count_success': wink_count_success,
+                      'wink_success': wink_count_success >= min_wink_count,
+                      'mouth_count': 0,
+                      'mouth_count_success': 0,
+                      'mouth_success': False,
+                      'head_count': 0,
+                      'head_count_success': 0,
+                      'head_success': False,
+                      'pass': False,
+                      'tips_msg': 'Please Wink'}
+        elif mouth_count < max_mouth_count and mouth_count_success < min_mouth_count:
             mouth_count += 1
             if lip_aer < app.config['FACE_MOUTH_OPEN']:
-                head_count_success += 1
-            results = {
+                mouth_count_success += 1
+            result = {
                 'wink_count': max_wink_count,
-                'wink_count_success': 0,
-                'wink_success': False,
+                'wink_count_success': min_wink_count,
+                'wink_success': True,
                 'mouth_count': mouth_count,
                 'mouth_count_success': mouth_count_success,
                 'mouth_success': mouth_count_success >= min_mouth_count,
@@ -108,19 +108,20 @@ def _gen(unknown_img, unknown_face_locations, bio_assay_):
             head_count += 1
             if head_aer < app.config['FACE_HEAD_MOVE']:
                 head_count_success += 1
-            results = {'wink_count': max_wink_count,
-                       'wink_count_success': 0,
-                       'wink_success': False,
-                       'mouth_count': max_mouth_count,
-                       'mouth_count_success': 0,
-                       'mouth_success': False,
-                       'head_count': head_count,
-                       'head_count_success': head_count_success,
-                       'head_success': head_count_success >= min_head_count,
-                       'pass': False,
-                       'tips_msg': 'Please Shaking head'}
-    if results['wink_success'] and results['mouth_success'] and results['head_success']:
-        results['psss'] = True
+            result = {'wink_count': max_wink_count,
+                      'wink_count_success': min_wink_count,
+                      'wink_success': True,
+                      'mouth_count': max_mouth_count,
+                      'mouth_count_success': min_mouth_count,
+                      'mouth_success': True,
+                      'head_count': head_count,
+                      'head_count_success': head_count_success,
+                      'head_success': head_count_success >= min_head_count,
+                      'pass': False,
+                      'tips_msg': 'Please Shaking head'}
+        if result['wink_success'] and result['mouth_success'] and result['head_success']:
+            result['pass'] = True
+        results.append(result)
     emit('server', {'data': json.dumps(results)}, namespace='/notice')
     return
 
@@ -240,5 +241,5 @@ else:
     env = os.environ.get('ENV', 'ir')
 
 if __name__ == '__main__':
-    app.config.from_object(get_config('ir'))
+    app.config.from_object(get_config('gen'))
     app.run(host='0.0.0.0', port=5001, debug=True, ssl_context=('server-cert.pem', 'server-key.pem'))

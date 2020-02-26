@@ -207,7 +207,7 @@ function Face() {
 					return;
 				}
 				if (_model !== 'IR') {
-					send_msg = req.data
+					send_msg = JSON.stringify(reqdata[0])
 					_p.innerHTML = JSON.parse(req.data)['tips_msg'];
 				}
 			})
