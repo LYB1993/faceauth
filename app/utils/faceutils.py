@@ -1,4 +1,4 @@
-import distance as distance
+from scipy.spatial import distance
 import face_recognition as face_recognition
 
 
@@ -10,16 +10,22 @@ def check_wink(eye):
     return ear
 
 
-def compare(file_stream):
-    face_found = False
-    is_obama = False
-    unknow_img = face_recognition.load_image_file(file_stream)
-    unknown_face_encodings = face_recognition.face_encodings(unknow_img)
-    face_location = face_recognition.face_location(unknow_img)
-    return is_obama
+def check_head():
+    return 0.2
+
+
+def check_mouth(mouth):
+    euclidean = distance.euclidean(mouth[0], mouth[1])
+    distance.euclidean(mouth[2], mouth[3])
+    distance.euclidean(mouth[4], mouth[5])
+    distance.euclidean(mouth[6], mouth[7])
+    return 0.1
+
+
+def clear_face_cache(index, known_face_encodings):
+    del known_face_encodings[index]
+
 
 
 if __name__ == '__main__':
-    image_file = face_recognition.load_image_file('../picture_14.png')
-    locations = face_recognition.face_locations(image_file)
-    print(locations[0])
+    print(type(bool('False')))

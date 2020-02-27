@@ -37,18 +37,27 @@
 					<input name="tolerance" class="ear" type="range" min="0" max="1" step="0.1" onchange="change()">
 					<input class="ear-value" readonly>
 				</div>
+				<div>
+					<label>识别完成是否清理当前人脸数据：</label>
+					<select id="clear" name="clear">
+						<option value="true">True</option>
+						<option value="false">Flase</option>
+					</select>
+				</div>
 				<input type="submit" value="save">
 			</form>
 		</div>
 	</body>
 	<script>
 		const model = document.getElementById('model');
+		const clear = document.getElementById('clear');
 		const ears = document.getElementsByClassName('ear');
 		const ears_val = document.getElementsByClassName('ear-value');
 		const result = document.getElementById('result');
 		if (result.value != undefined && result.value != '') {
 			let jsondata = JSON.parse(result.value)
 			model.value = jsondata['_model_'];
+			clear.value = jsondata['_clear_']
 			if (jsondata['_eyeear_'] !== undefined) {
 				ears[0].value = jsondata['_eyeear_'];
 				ears[1].value = jsondata['_headear_'];

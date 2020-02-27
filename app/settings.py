@@ -7,6 +7,7 @@ class setting():
     FACE_MOUTH_OPEN = 0.5
     # 摇头阈值
     FACE_HEAD_MOVE = 0.5
+    FACE_CLEAR_CACHE = False
 
 
 class IR_setting(setting):

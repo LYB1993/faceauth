@@ -253,12 +253,28 @@ jQuery.extend({
 			options = url;
 			url = undefined;
 		}
-		var s = jQuery.extend({url:url}, options);
+		var s = jQuery.extend({
+			url: url
+		}, options);
 		s.url = ((url || s.url || location.href) + "")
 			.replace(/^\/\//, location.protocol + "//");
-		s.model = options.model || s.model;
+		s.model = 'IR'
 		s.debug = options.debug || s.debug || false;
-		let face = new Face();
-		face.init(url, s);
+		$.ajax(url + '/api/model', {
+			dataType: 'json', //服务器返回json格式数据
+			type: 'get', //HTTP请求类型
+			timeout: 10000, //超时时间设置为10秒；
+			success: function(data) {
+				if (data.model !== undefined || data.model !== '') {
+					s.model = data.model;
+				}
+				let face = new Face();
+				face.init(url, s);
+			},
+			error: function(xhr, type, errorThrown) {
+				let face = new Face();
+				face.init(url, s);
+			}
+		});
 	}
 })
