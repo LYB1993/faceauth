@@ -126,9 +126,9 @@ function Face() {
 					if (device.kind === 'videoinput') {
 						if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {}
 						if (device.label.indexOf('IR') != -1) {
-							initStream(device.deviceId, _scr_data_v[0])
+							initStream(device.label,device.deviceId, _scr_data_v[0])
 						} else {
-							initStream(device.deviceId, _display_v[0])
+							initStream(device.label,device.deviceId, _display_v[0])
 						}
 					}
 				});
@@ -138,7 +138,10 @@ function Face() {
 	}
 
 
-	function initStream(deviceId, obj) {
+	function initStream(deviceLabel,deviceId, obj) {
+		if(deviceLabel.indexOf('back')!=-1 || deviceLabel.indexOf('后置')!=-1){
+			return;
+		}
 		if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
 			navigator.mediaDevices.getUserMedia({
 				video: {
@@ -153,6 +156,20 @@ function Face() {
 			}).catch(error => {
 				console.error('Not support userMedia')
 			});
+		}else if(navigator.getUserMedia){
+			 navigator.getUserMedia({
+				video: {
+					deviceId: {
+						exact: deviceId
+					}
+				},
+				audio: false
+			}, stream => {
+               _close_stream.push(stream);
+				obj.srcObject = stream;
+            }, err => {
+                console.log('Not support userMedia')
+            });
 		}
 	}
 
@@ -161,8 +178,14 @@ function Face() {
 	 */
 	function _send_img() {
 		let _send_context = _send_canvas[0].getContext('2d')
-		_scr_data_v[0].addEventListener('timeupdate', event => {
-			_send_context.drawImage(_scr_data_v[0], 0, 0);
+		let _stream_src;
+		if(_model==='IR'){
+			_stream_src = _scr_data_v[0]
+		}else{
+			_stream_src = _display_v[0]
+		}
+		_stream_src.addEventListener('timeupdate', event => {
+			_send_context.drawImage(_stream_src, 0, 0);
 			let base64 = _send_canvas[0].toDataURL('images/png');
 			let timestamp = Math.round(new Date() / 1000)
 			if (timestamp % 3 === 0) {
@@ -200,6 +223,7 @@ function Face() {
 				let reqdata = JSON.parse(req.data);
 				if (reqdata[0]['pass'] || reqdata[0]['pass'] === 'true') {
 					result['pass'] = true;
+					result['success'] = true;
 					_fn_close_stream();
 					if (_def_config.success != undefined) {
 						_def_config.success(result)
@@ -208,7 +232,7 @@ function Face() {
 				}
 				if (_model !== 'IR') {
 					send_msg = JSON.stringify(reqdata[0])
-					_p.innerHTML = JSON.parse(req.data)['tips_msg'];
+					_p[0].innerHTML = JSON.parse(req.data)[0]['tips_msg'];
 				}
 			})
 		}

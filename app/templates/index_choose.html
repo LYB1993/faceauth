@@ -93,6 +93,8 @@
             console.log('Not support userMedia');
         }
         video.addEventListener('timeupdate', event => {
+            document.getElementById('width').innerHTML = video.clientWidth
+            document.getElementById('height').innerHTML = video.clientHeight
             canva2.setAttribute("width", video.clientWidth);
             canva2.setAttribute("height", video.clientHeight);
             canva.setAttribute("width", video.clientWidth);

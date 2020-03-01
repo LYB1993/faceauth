@@ -15,10 +15,12 @@
 	<script>
 		$(document).ready(function() {
 
-			$.face('https://127.0.0.1:5001', {
+			$.face('https://192.168.123.222:5001', {
 				model: 'GEN',
+                debug:true,
 				success: function(result) {
 					console.log(result)
+
 				}
 			})
 		})
