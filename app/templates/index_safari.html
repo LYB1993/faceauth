@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+	</head>
+	<body>
+		<div>
+			<button onclick="close()">close</button>
+			<button onclick="start()">start</button>
+		</div>
+		<div>
+			<video id='phone' autoplay></video>
+		</div>
+		<div>
+			<canvas id='show'></canvas>
+		</div>
+		<div>
+			<p id='p1'></p>
+		</div>
+	</body>
+	<script type="text/javascript">
+		const phone_v = document.getElementById('phone')
+		const show_canvas = document.getElementById('show')
+		const canvas_2d = show_canvas.getContext('2d')
+		let curre_steram;
+
+		function start() {
+			navigator.mediaDevices.getUserMedia({
+				video: {
+					facingMode: 'environment'
+				},
+				audio: false
+			}).then(stream => {
+				stream.getTracks().forEach(track => {
+					track.stop();
+				});
+				navigator.mediaDevices.enumerateDevices().then(devices => {
+					document.getElementById('p1').innerText = JSON.stringify(devices)
+					devices.forEach(device => {
+						if (device.kind === 'videoinput' && device.label.indexOf('后置') != -1) {
+							initStream(device.label, device.deviceId, phone_v)
+						}
+					});
+				})
+			}).catch(error => {})
+		}
+
+		function initStream(deviceLabel, deviceId, obj) {
+			if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+				navigator.mediaDevices.getUserMedia({
+					video: {
+						deviceId: {
+							exact: deviceId
+						}
+					},
+					audio: false
+				}).then(stream => {
+					curre_steram = stream;
+					obj.srcObject = stream;
+				}).catch(error => {
+					console.error('Not support userMedia')
+				});
+			}
+		}
+
+		function close() {
+			if (curre_steram != undefined) {
+				curre_steram.getTracks().forEach(track => {
+					track.stop();
+				});
+			}
+		}
+	</script>
+</html>

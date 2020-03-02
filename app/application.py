@@ -230,6 +230,10 @@ def api_model():
     return json.dumps({'model': app.config['BIO_ASSAY_STYLE']})
 
 
+@app.route('/safari', methods=['GET'])
+def index_safari():
+    return render_template('/index_safari.html')
+
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_image():
     if request.method != 'POST':

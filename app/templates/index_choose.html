@@ -57,6 +57,9 @@
 
 
     choose.addEventListener('click', event => {
+		navigator.mediaDevices.enumerateDevices().then(medivs=>{
+			document.getElementById('tips').innerText = 'tips:' + JSON.stringify(medivs) 
+		});
         if (typeof currentStream !== 'undefined') {
             stopMediaTracks(currentStream);
         }
@@ -75,6 +78,7 @@
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
             navigator.mediaDevices.getUserMedia(constraints)
                     .then(stream => {
+						document.getElementById('p1').innerText = 'p1:' + JSON.stringify(constraints)
                         currentStream = stream;
                         video.srcObject = stream;
                         return navigator.mediaDevices.enumerateDevices();
@@ -136,6 +140,7 @@
 
 
     function gotDevices(mediaDevices) {
+		document.getElementById('p2').innerText = 'p2:' +  JSON.stringify(mediaDevices)
         select.innerHTML = '';
         select.appendChild(document.createElement('option'));
         let count = 1;

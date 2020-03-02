@@ -8,6 +8,16 @@
 		<div>
 			<face-div display-box="false"></face-div>
 		</div>
+		<div>
+			<p id='p1'></p>
+			<p id='p2'></p>
+			<p id='p3'></p>
+			<p id='p4'></p>
+			<p id='p5'></p>
+			<p id='p6'></p>
+			<p id='p7'></p>
+			<p id='p8'></p>
+		</div>
 	</body>
 	<script src="../static/js/jquery.min.js"></script>
 	<script src="../static/js/socket.io.slim.js"></script>
@@ -15,7 +25,7 @@
 	<script>
 		$(document).ready(function() {
 
-			$.face('https://192.168.123.222:5001', {
+			$.face('https://192.168.20.196:5001', {
 				model: 'GEN',
                 debug:true,
 				success: function(result) {

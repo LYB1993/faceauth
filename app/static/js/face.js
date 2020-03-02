@@ -16,7 +16,10 @@ function Face() {
 	 */
 	let _scr_data_v;
 	let _display_v;
+	let _display_v_iphone;
 	const _p = $('<p/>')
+	const rSafari = /version\/([\w.]+).*(safari)/;
+	const matchBS = rSafari.exec(navigator.userAgent.toLowerCase());
 
 
 	/**
@@ -92,6 +95,7 @@ function Face() {
 		face_tag.append(_scr_data_v);
 		face_tag.append(_display_v);
 		face_tag.append(_send_canvas);
+		face_tag.append(_display_v_iphone)
 		_init_webcam();
 	}
 
@@ -111,6 +115,10 @@ function Face() {
 			autoplay: 'autoplay',
 			id: 'RGB'
 		});
+		_display_v_iphone = document.createElement('video')
+		_display_v_iphone.setAttribute('id', 'RGB_iPhone');
+		_display_v_iphone.setAttribute('autoplay', '');
+		_display_v_iphone.autoplay = true
 	}
 
 
@@ -119,30 +127,51 @@ function Face() {
 	 * 初始化摄像头
 	 */
 	function _init_webcam() {
-		let video_init = [];
-		if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices()) {
-			navigator.mediaDevices.enumerateDevices().then(function(devices) {
-				devices.forEach(device => {
-					if (device.kind === 'videoinput') {
-						if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {}
-						if (device.label.indexOf('IR') != -1) {
-							initStream(device.label,device.deviceId, _scr_data_v[0])
-						} else {
-							initStream(device.label,device.deviceId, _display_v[0])
-						}
-					}
+		if (matchBS != null) {
+			navigator.mediaDevices.getUserMedia({
+				video: {
+					facingMode: 'environment'
+				},
+				audio: false
+			}).then(stream => {
+				stream.getTracks().forEach(track => {
+					track.stop();
 				});
-			});
+				navigator.mediaDevices.enumerateDevices().then(devices => {
+					document.getElementById('p1').innerText = 'p1:' + JSON.stringify(devices)
+					devices.forEach(device => {
+						if (device.kind === 'videoinput' && device.label.indexOf('前置') != -1) {
+							document.getElementById('p2').innerText = 'p2:' + device.label
+							initStream(device.label, device.deviceId, _display_v_iphone)
+						}
+					});
+				})
+			}).catch(error => {})
+		} else {
+			if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices()) {
+				navigator.mediaDevices.enumerateDevices().then(function(devices) {
+					devices.forEach(device => {
+						if (device.kind === 'videoinput') {
+							if (device.label.indexOf('IR') != -1) {
+								initStream(device.label, device.deviceId, _scr_data_v[0])
+							} else {
+								initStream(device.label, device.deviceId, _display_v[0])
+							}
+						}
+					});
+				});
+			}
 		}
 		_send_img();
 	}
 
-
-	function initStream(deviceLabel,deviceId, obj) {
-		if(deviceLabel.indexOf('back')!=-1 || deviceLabel.indexOf('后置')!=-1){
+	function initStream(deviceLabel, deviceId, obj) {
+		if (deviceLabel.indexOf('back') != -1) {
 			return;
 		}
 		if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+			document.getElementById('p3').innerText = 'p3:' + deviceLabel
+			document.getElementById('p4').innerText = 'p4:' + deviceId
 			navigator.mediaDevices.getUserMedia({
 				video: {
 					deviceId: {
@@ -151,13 +180,14 @@ function Face() {
 				},
 				audio: false
 			}).then(stream => {
+				document.getElementById('p5').innerText = 'p5:stream'
 				_close_stream.push(stream);
 				obj.srcObject = stream;
 			}).catch(error => {
 				console.error('Not support userMedia')
 			});
-		}else if(navigator.getUserMedia){
-			 navigator.getUserMedia({
+		} else if (navigator.getUserMedia) {
+			navigator.getUserMedia({
 				video: {
 					deviceId: {
 						exact: deviceId
@@ -165,11 +195,11 @@ function Face() {
 				},
 				audio: false
 			}, stream => {
-               _close_stream.push(stream);
+				_close_stream.push(stream);
 				obj.srcObject = stream;
-            }, err => {
-                console.log('Not support userMedia')
-            });
+			}, err => {
+				console.log('Not support userMedia')
+			});
 		}
 	}
 
@@ -179,12 +209,32 @@ function Face() {
 	function _send_img() {
 		let _send_context = _send_canvas[0].getContext('2d')
 		let _stream_src;
-		if(_model==='IR'){
+		if (_model === 'IR') {
 			_stream_src = _scr_data_v[0]
-		}else{
-			_stream_src = _display_v[0]
+		} else {
+			if (matchBS != null) {
+				_stream_src = _display_v_iphone
+			} else {
+				_stream_src = _display_v[0]
+			}
 		}
+		// document.getElementById('p4').innerText = 'p4:_send_img()end'
+		// _stream_src.addEventListener('timeupdate', event => {
+		// 	document.getElementById('p1').innerText = 'p1:ontimeupdate()end'
+		// }, false)
+		// _stream_src.addEventListener('loadstart', event => {
+		// 	document.getElementById('p5').innerText = 'p5:onloadstart()end'
+		// })
+		// _stream_src.addEventListener('play', event => {
+		// 	document.getElementById('p3').innerText = 'p3:play()end'
+		// })
+		// _stream_src.addEventListener('canplay', event => {
+		// 	document.getElementById('p2').innerText = 'p2:oncanplay()end'
+		// })
+		// _stream_src.play()
+		document.getElementById('p6').innerText = 'p6:' + _stream_src.currentTime
 		_stream_src.addEventListener('timeupdate', event => {
+			document.getElementById('p1').innerText = 'p1:timeupdate'
 			_send_context.drawImage(_stream_src, 0, 0);
 			let base64 = _send_canvas[0].toDataURL('images/png');
 			let timestamp = Math.round(new Date() / 1000)
