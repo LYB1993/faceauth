@@ -10,7 +10,7 @@
 			<button onclick="start()">start</button>
 		</div>
 		<div>
-			<video id='phone' autoplay></video>
+			<video id='phone' autoplay playsinline></video>
 		</div>
 		<div>
 			<canvas id='show'></canvas>
@@ -24,7 +24,6 @@
 		const show_canvas = document.getElementById('show')
 		const canvas_2d = show_canvas.getContext('2d')
 		let curre_steram;
-
 		function start() {
 			navigator.mediaDevices.getUserMedia({
 				video: {

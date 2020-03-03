@@ -14,27 +14,36 @@ function Face() {
 	/**
 	 * 需要初始化的标签
 	 */
+	let _send_canvas;
+	let _box_canvas;
 	let _scr_data_v;
 	let _display_v;
 	let _display_v_iphone;
 	const _p = $('<p/>')
-	const rSafari = /version\/([\w.]+).*(safari)/;
-	const matchBS = rSafari.exec(navigator.userAgent.toLowerCase());
-
+	const _error_msg = $('<p/>')
 
 	/**
-	 * canvas标签L
+	 * 校验是否是safari浏览器
 	 */
-	let _send_canvas;
-	let _box_canvas;
+	const rSafari = /version\/([\w.]+).*(safari)/;
+	const matchBS = rSafari.exec(navigator.userAgent.toLowerCase());
+	const isIOS = matchBS != null
 
-
+	/**
+	 * socket 对象
+	 */
 	let noticeSocket;
 
+	/**
+	 * 定义一些中间变量使用
+	 */
 	let _model = 'IR';
 	let _receive_ready = false
 	let _debug = false
 
+	/**
+	 * 在普通模式下需要发送的验证数据
+	 */
 	let send_msg =
 		'{"wink_count":0,"wink_count_success":0,"mouth_count":0,"mouth_count_success":0,"head_count":0,"head_count_success":0}'
 
@@ -43,9 +52,12 @@ function Face() {
 	 * 自定义标签
 	 */
 	let face_tag;
-	let videos = [];
 	let _close_stream = [];
 
+
+	/**
+	 * 返回结果
+	 */
 	let result = {
 		'success': false
 	}
@@ -68,38 +80,44 @@ function Face() {
 		jQuery.extend(_def_config, config);
 		_debug = _def_config.debug;
 		_model = _def_config.model;
-		inittable();
+		_init_table();
 		if (io !== undefined) {
 			let _url = url + '/notice';
 			noticeSocket = io(_url, {
 				autoConnect: false
 			});
 		}
-		videos.push(_scr_data_v);
-		videos.push(_display_v);
-		_send_canvas = $('<canvas/>');
-		_send_canvas.attr('width', _def_config['width'])
-		_send_canvas.attr('height', _def_config['height'])
-		_send_canvas.attr('id', 'send-canvas')
 		if (!_debug) {
 			_send_canvas.hide()
 		}
 		if (face_tag.attr('display-box') === 'true') {
-			_box_canvas = $('<canvas/>');
-			_box_canvas.attr('width', _def_config['width'])
-			_box_canvas.attr('height', _def_config['height'])
-			_box_canvas.attr('id', 'box-canvas')
 			_box_canvas.hide()
 			face_tag.append(_box_canvas);
 		}
 		face_tag.append(_scr_data_v);
 		face_tag.append(_display_v);
 		face_tag.append(_send_canvas);
-		face_tag.append(_display_v_iphone)
+		if (isIOS) {
+			face_tag.append(_display_v_iphone)
+		}
 		_init_webcam();
 	}
 
-	function inittable() {
+
+	/**
+	 * 初始化页面需要的canvas和video标签
+	 */
+	function _init_table() {
+		//用于发送验证图片
+		_send_canvas = $('<canvas/>');
+		_send_canvas.attr('width', _def_config['width'])
+		_send_canvas.attr('height', _def_config['height'])
+		_send_canvas.attr('id', 'send-canvas')
+		//用于显示人脸位置
+		_box_canvas = $('<canvas/>');
+		_box_canvas.attr('width', _def_config['width'])
+		_box_canvas.attr('height', _def_config['height'])
+		_box_canvas.attr('id', 'box-canvas')
 		_scr_data_v = $('<video/>', {
 			width: _def_config['width'],
 			height: _def_config['height'],
@@ -115,10 +133,13 @@ function Face() {
 			autoplay: 'autoplay',
 			id: 'RGB'
 		});
-		_display_v_iphone = document.createElement('video')
-		_display_v_iphone.setAttribute('id', 'RGB_iPhone');
-		_display_v_iphone.setAttribute('autoplay', '');
-		_display_v_iphone.autoplay = true
+		if (isIOS) {
+			_display_v_iphone = document.createElement('video')
+			_display_v_iphone.setAttribute('id', 'RGB_iPhone');
+			_display_v_iphone.setAttribute('autoplay', '');
+			_display_v_iphone.setAttribute('playsinline', '');
+		}
+
 	}
 
 
@@ -127,7 +148,7 @@ function Face() {
 	 * 初始化摄像头
 	 */
 	function _init_webcam() {
-		if (matchBS != null) {
+		if (isIOS) {
 			navigator.mediaDevices.getUserMedia({
 				video: {
 					facingMode: 'environment'
@@ -138,10 +159,8 @@ function Face() {
 					track.stop();
 				});
 				navigator.mediaDevices.enumerateDevices().then(devices => {
-					document.getElementById('p1').innerText = 'p1:' + JSON.stringify(devices)
 					devices.forEach(device => {
 						if (device.kind === 'videoinput' && device.label.indexOf('前置') != -1) {
-							document.getElementById('p2').innerText = 'p2:' + device.label
 							initStream(device.label, device.deviceId, _display_v_iphone)
 						}
 					});
@@ -170,8 +189,6 @@ function Face() {
 			return;
 		}
 		if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-			document.getElementById('p3').innerText = 'p3:' + deviceLabel
-			document.getElementById('p4').innerText = 'p4:' + deviceId
 			navigator.mediaDevices.getUserMedia({
 				video: {
 					deviceId: {
@@ -180,10 +197,10 @@ function Face() {
 				},
 				audio: false
 			}).then(stream => {
-				document.getElementById('p5').innerText = 'p5:stream'
 				_close_stream.push(stream);
 				obj.srcObject = stream;
 			}).catch(error => {
+				_error_msg.text('Not support userMedia')
 				console.error('Not support userMedia')
 			});
 		} else if (navigator.getUserMedia) {
@@ -198,6 +215,7 @@ function Face() {
 				_close_stream.push(stream);
 				obj.srcObject = stream;
 			}, err => {
+				_error_msg.text('Not support userMedia')
 				console.log('Not support userMedia')
 			});
 		}
@@ -212,29 +230,14 @@ function Face() {
 		if (_model === 'IR') {
 			_stream_src = _scr_data_v[0]
 		} else {
-			if (matchBS != null) {
+			if (isIOS) {
 				_stream_src = _display_v_iphone
 			} else {
 				_stream_src = _display_v[0]
 			}
 		}
-		// document.getElementById('p4').innerText = 'p4:_send_img()end'
-		// _stream_src.addEventListener('timeupdate', event => {
-		// 	document.getElementById('p1').innerText = 'p1:ontimeupdate()end'
-		// }, false)
-		// _stream_src.addEventListener('loadstart', event => {
-		// 	document.getElementById('p5').innerText = 'p5:onloadstart()end'
-		// })
-		// _stream_src.addEventListener('play', event => {
-		// 	document.getElementById('p3').innerText = 'p3:play()end'
-		// })
-		// _stream_src.addEventListener('canplay', event => {
-		// 	document.getElementById('p2').innerText = 'p2:oncanplay()end'
-		// })
-		// _stream_src.play()
-		document.getElementById('p6').innerText = 'p6:' + _stream_src.currentTime
 		_stream_src.addEventListener('timeupdate', event => {
-			document.getElementById('p1').innerText = 'p1:timeupdate'
+			resetCanvasSize(_stream_src)
 			_send_context.drawImage(_stream_src, 0, 0);
 			let base64 = _send_canvas[0].toDataURL('images/png');
 			let timestamp = Math.round(new Date() / 1000)
@@ -260,6 +263,19 @@ function Face() {
 				}
 			}
 		})
+	}
+
+	/**
+	 * 根据当前视频窗口的大小重置canvas标签的大小
+	 * @param {Object} _video
+	 */
+	function resetCanvasSize(_video) {
+		_send_canvas.attr('width', _video.clientWidth)
+		_send_canvas.attr('height', _video.clientHeight)
+		if (face_tag.attr('display-box') === 'true') {
+			_box_canvas.attr('width', _video.clientWidth)
+			_box_canvas.attr('height', _video.clientHeight)
+		}
 	}
 
 	/**
