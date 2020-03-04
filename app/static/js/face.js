@@ -23,11 +23,13 @@ function Face() {
 	const _error_msg = $('<p/>')
 
 	/**
-	 * 校验是否是safari浏览器
+	 * 校验浏览器以及平台信息
 	 */
-	const rSafari = /version\/([\w.]+).*(safari)/;
-	const matchBS = rSafari.exec(navigator.userAgent.toLowerCase());
-	const isIOS = matchBS != null
+	const matchBS = navigator.userAgent.toLowerCase();
+	let isWin = false;
+	let isMac = false;
+	let isAndroid = false;
+	let unKnow = false;
 
 	/**
 	 * socket 对象
@@ -40,6 +42,7 @@ function Face() {
 	let _model = 'IR';
 	let _receive_ready = false
 	let _debug = false
+	let isRestSize = true;
 
 	/**
 	 * 在普通模式下需要发送的验证数据
@@ -80,7 +83,7 @@ function Face() {
 		jQuery.extend(_def_config, config);
 		_debug = _def_config.debug;
 		_model = _def_config.model;
-		_init_table();
+		_initSysInfo();
 		if (io !== undefined) {
 			let _url = url + '/notice';
 			noticeSocket = io(_url, {
@@ -97,7 +100,7 @@ function Face() {
 		face_tag.append(_scr_data_v);
 		face_tag.append(_display_v);
 		face_tag.append(_send_canvas);
-		if (isIOS) {
+		if (isMac) {
 			face_tag.append(_display_v_iphone)
 		}
 		_init_webcam();
@@ -133,7 +136,7 @@ function Face() {
 			autoplay: 'autoplay',
 			id: 'RGB'
 		});
-		if (isIOS) {
+		if (isMac) {
 			_display_v_iphone = document.createElement('video')
 			_display_v_iphone.setAttribute('id', 'RGB_iPhone');
 			_display_v_iphone.setAttribute('autoplay', '');
@@ -142,13 +145,26 @@ function Face() {
 
 	}
 
+	function _initSysInfo() {
+		if (matchBS.indexOf('mac') !== -1) {
+			isMac = true;
+		} else if (matchBS.indexOf('windows') !== -1) {
+			isWin = true;
+		} else if (matchBS.indexOf('android') !== -1) {
+			isAndroid = true;
+		} else {
+			unKnow = true;
+		}
+		_init_table();
+	}
+
 
 
 	/**
 	 * 初始化摄像头
 	 */
 	function _init_webcam() {
-		if (isIOS) {
+		if (isMac) {
 			navigator.mediaDevices.getUserMedia({
 				video: {
 					facingMode: 'environment'
@@ -160,18 +176,20 @@ function Face() {
 				});
 				navigator.mediaDevices.enumerateDevices().then(devices => {
 					devices.forEach(device => {
-						if (device.kind === 'videoinput' && device.label.indexOf('前置') != -1) {
+						if (device.kind === 'videoinput' && device.label.indexOf('前置') !== -1) {
 							initStream(device.label, device.deviceId, _display_v_iphone)
 						}
 					});
 				})
-			}).catch(error => {})
+			}).catch(error => {
+				_error_msg.text('Not support userMedia')
+			})
 		} else {
 			if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices()) {
 				navigator.mediaDevices.enumerateDevices().then(function(devices) {
 					devices.forEach(device => {
 						if (device.kind === 'videoinput') {
-							if (device.label.indexOf('IR') != -1) {
+							if (device.label.indexOf('IR') !== -1) {
 								initStream(device.label, device.deviceId, _scr_data_v[0])
 							} else {
 								initStream(device.label, device.deviceId, _display_v[0])
@@ -185,7 +203,7 @@ function Face() {
 	}
 
 	function initStream(deviceLabel, deviceId, obj) {
-		if (deviceLabel.indexOf('back') != -1) {
+		if (deviceLabel.indexOf('back') !== -1) {
 			return;
 		}
 		if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -225,19 +243,21 @@ function Face() {
 	 * 发送验证图片
 	 */
 	function _send_img() {
-		let _send_context = _send_canvas[0].getContext('2d')
+		const _send_context = _send_canvas[0].getContext('2d');
 		let _stream_src;
 		if (_model === 'IR') {
 			_stream_src = _scr_data_v[0]
 		} else {
-			if (isIOS) {
+			if (isMac) {
 				_stream_src = _display_v_iphone
 			} else {
 				_stream_src = _display_v[0]
 			}
 		}
 		_stream_src.addEventListener('timeupdate', event => {
-			resetCanvasSize(_stream_src)
+			if(isRestSize){
+				resetCanvasSize(_stream_src)
+			}
 			_send_context.drawImage(_stream_src, 0, 0);
 			let base64 = _send_canvas[0].toDataURL('images/png');
 			let timestamp = Math.round(new Date() / 1000)
@@ -276,6 +296,7 @@ function Face() {
 			_box_canvas.attr('width', _video.clientWidth)
 			_box_canvas.attr('height', _video.clientHeight)
 		}
+		isRestSize = false;
 	}
 
 	/**
