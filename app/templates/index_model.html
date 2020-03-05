@@ -6,7 +6,7 @@
 	</head>
 	<body>
 		<div>
-			<face-div display-box="false"></face-div>
+			<face-div display-box="true"></face-div>
 		</div>
 	</body>
 	<script src="../static/js/jquery.min.js"></script>
@@ -17,7 +17,7 @@
 
 			$.face('https://192.168.20.196:5001', {
 				model: 'GEN',
-                debug:true,
+                debug: false,
 				success: function(result) {
 					console.log(result)
 

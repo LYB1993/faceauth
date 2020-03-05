@@ -43,6 +43,8 @@ function Face() {
 	let _receive_ready = false
 	let _debug = false
 	let isRestSize = true;
+	let _display_box = false
+	let _box_context;
 
 	/**
 	 * 在普通模式下需要发送的验证数据
@@ -62,7 +64,9 @@ function Face() {
 	 * 返回结果
 	 */
 	let result = {
-		'success': false
+		'success': false,
+		'pass': false,
+		'name': ''
 	}
 
 
@@ -93,8 +97,8 @@ function Face() {
 		if (!_debug) {
 			_send_canvas.hide()
 		}
-		if (face_tag.attr('display-box') === 'true') {
-			_box_canvas.hide()
+		_display_box = face_tag.attr('display-box') === 'true'
+		if (_display_box) {
 			face_tag.append(_box_canvas);
 		}
 		face_tag.append(_scr_data_v);
@@ -121,6 +125,7 @@ function Face() {
 		_box_canvas.attr('width', _def_config['width'])
 		_box_canvas.attr('height', _def_config['height'])
 		_box_canvas.attr('id', 'box-canvas')
+		_box_context = _box_canvas[0].getContext('2d')
 		_scr_data_v = $('<video/>', {
 			width: _def_config['width'],
 			height: _def_config['height'],
@@ -299,6 +304,20 @@ function Face() {
 		isRestSize = false;
 	}
 
+	function _draw_face_box(location) {
+	    let face = {};
+	    face.x = parseInt(location['left'])
+		face.y = parseInt(location['top'])
+		face.width = parseInt(location['bottom']) - parseInt(location['top'])
+		face.height = parseInt(location['right']) - parseInt(location['left'])
+		face.name = location['name']
+	    _box_context.strokeStyle = '#a64ceb';
+	    _box_context.strokeRect(face.x, face.y, face.width, face.height);
+	    _box_context.font = '11px Helvetica';
+	    _box_context.fillStyle = "#fff";
+//	    _box_context.fillText(face.name, face.x + face.width / 2, face.y + face.height + 11);
+    };
+
 	/**
 	 * 接收服务端信息
 	 */
@@ -308,9 +327,13 @@ function Face() {
 			noticeSocket.on('server', req => {
 				console.log(req)
 				let reqdata = JSON.parse(req.data);
+				if (_display_box) {
+				    _draw_face_box(reqdata[0]['location'])
+				}
 				if (reqdata[0]['pass'] || reqdata[0]['pass'] === 'true') {
 					result['pass'] = true;
 					result['success'] = true;
+					result['name'] = reqdata[0]['location']['name']
 					_fn_close_stream();
 					if (_def_config.success != undefined) {
 						_def_config.success(result)

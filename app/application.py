@@ -70,10 +70,15 @@ def _gen(unknown_img, unknown_face_locations, bio_assay_):
     head_count = json_loads['head_count']
     head_count_success = json_loads['head_count_success']
     results = []
-    for face_landmark in face_landmarks:
+    for (top, right, bottom, left), face_landmark in zip(unknown_face_locations,face_landmarks):
         eye_ear = (check_wink(face_landmark['left_eye']) + check_wink(face_landmark['right_eye'])) / 2
         lip_aer = 0
         head_aer = 0
+        _face_location = {'top': top,
+                          'right': right,
+                          'bottom': bottom,
+                          'left': left,
+                          'name': ''}
         if wink_count < max_wink_count and wink_count_success < min_wink_count:
             wink_count += 1
             if eye_ear < float(app.config['FACE_EYS_WINK']):
@@ -88,6 +93,7 @@ def _gen(unknown_img, unknown_face_locations, bio_assay_):
                       'head_count_success': 0,
                       'head_success': False,
                       'pass': False,
+                      'location': _face_location,
                       'tips_msg': 'Please Wink'}
         elif mouth_count < max_mouth_count and mouth_count_success < min_mouth_count:
             mouth_count += 1
@@ -103,6 +109,7 @@ def _gen(unknown_img, unknown_face_locations, bio_assay_):
                       'head_count_success': 0,
                       'head_success': False,
                       'pass': False,
+                      'location': _face_location,
                       'tips_msg': 'Please opened and shut Mouth'}
         else:
             head_count += 1
@@ -118,15 +125,18 @@ def _gen(unknown_img, unknown_face_locations, bio_assay_):
                       'head_count_success': head_count_success,
                       'head_success': head_count_success >= min_head_count,
                       'pass': False,
+                      'location': _face_location,
                       'tips_msg': 'Please Shaking head'}
         if result['wink_success'] and result['mouth_success'] and result['head_success']:
             unknown_encodings = face_recognition.face_encodings(unknown_img, unknown_face_locations)
             compare_faces = face_recognition.compare_faces(known_face_encodings, unknown_encodings[0])
+            index = np.argmin(face_recognition.face_distance(known_face_encodings, unknown_encodings[0]))
             if bool(app.config['FACE_CLEAR_CACHE']):
-                index = np.argmin(face_recognition.face_distance(known_face_encodings, unknown_encodings[0]))
                 clear_face_cache(index, known_face_encodings)
+                clear_face_cache(index, known_face_names)
             if compare_faces[0]:
                 result['pass'] = True
+                result['location']['name'] = known_face_names[index]
         results.append(result)
     emit('server', {'data': json.dumps(results)}, namespace='/notice')
 
@@ -152,11 +162,12 @@ def _ir(unknown_img, unknown_face_locations):
                 clear_face_cache(best_match_index, known_face_encodings)
             name = known_face_names[best_match_index]
             _pass = True
-        result = {'top': top,
-                  'right': right,
-                  'bottom': bottom,
-                  'left': left,
-                  'name': name,
+        _face_location = {'top': top,
+                          'right': right,
+                          'bottom': bottom,
+                          'left': left,
+                          'name': name}
+        result = {'location': _face_location,
                   'pass': _pass
                   }
         results.append(result)

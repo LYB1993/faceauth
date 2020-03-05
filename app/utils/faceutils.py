@@ -22,8 +22,8 @@ def check_mouth(mouth):
     return 0.1
 
 
-def clear_face_cache(index, known_face_encodings):
-    del known_face_encodings[index]
+def clear_face_cache(index, known_face_arrays):
+    del known_face_arrays[index]
 
 
 
