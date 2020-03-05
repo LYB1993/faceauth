@@ -20,14 +20,12 @@ socket_io = SocketIO()
 socket_io.init_app(app)
 
 # Load a sample picture and learn how to recognize it.
-lyb_image = face_recognition.load_image_file("static/lyb/picture_24.png")
-lyb_face_encoding = face_recognition.face_encodings(lyb_image)[0]
+# lyb_image = face_recognition.load_image_file("static/lyb/picture_24.png")
+# lyb_face_encoding = face_recognition.face_encodings(lyb_image)[0]
 
 known_face_encodings = [
-    lyb_face_encoding
 ]
 known_face_names = [
-    "Liuyanbo"
 ]
 # 眨眼检测的最少次数
 min_wink_count = 3
@@ -261,7 +259,7 @@ def upload_image():
         upload_face_encoding = face_recognition.face_encodings(upload_face_image)[0]
         known_face_encodings.append(upload_face_encoding)
         known_face_names.append(card_id)
-        return redirect('/upload', success='true')
+        return render_template("/upload.html", success='true')
 
 
 @app.route('/favicon.ico')

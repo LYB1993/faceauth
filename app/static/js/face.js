@@ -16,11 +16,14 @@ function Face() {
 	 */
 	let _send_canvas;
 	let _box_canvas;
+	let _box_context;
 	let _scr_data_v;
 	let _display_v;
 	let _display_v_iphone;
-	const _p = $('<p/>')
-	const _error_msg = $('<p/>')
+	const _p = $('<p/>');
+	const _error_msg = $('<p/>');
+	let video_w;
+	let video_h;
 
 	/**
 	 * 校验浏览器以及平台信息
@@ -44,7 +47,8 @@ function Face() {
 	let _debug = false
 	let isRestSize = true;
 	let _display_box = false
-	let _box_context;
+
+
 
 	/**
 	 * 在普通模式下需要发送的验证数据
@@ -125,6 +129,7 @@ function Face() {
 		_box_canvas.attr('width', _def_config['width'])
 		_box_canvas.attr('height', _def_config['height'])
 		_box_canvas.attr('id', 'box-canvas')
+		_box_canvas.css('z-index',999)
 		_box_context = _box_canvas[0].getContext('2d')
 		_scr_data_v = $('<video/>', {
 			width: _def_config['width'],
@@ -295,9 +300,11 @@ function Face() {
 	 * @param {Object} _video
 	 */
 	function resetCanvasSize(_video) {
+		video_w = _video.clientWidth;
+		video_h = _video.clientHeight;
 		_send_canvas.attr('width', _video.clientWidth)
 		_send_canvas.attr('height', _video.clientHeight)
-		if (face_tag.attr('display-box') === 'true') {
+		if (_display_box) {
 			_box_canvas.attr('width', _video.clientWidth)
 			_box_canvas.attr('height', _video.clientHeight)
 		}
@@ -311,11 +318,13 @@ function Face() {
 		face.width = parseInt(location['bottom']) - parseInt(location['top'])
 		face.height = parseInt(location['right']) - parseInt(location['left'])
 		face.name = location['name']
+		_box_canvas.attr('width', video_w)
+		_box_canvas.attr('height', video_h)
 	    _box_context.strokeStyle = '#a64ceb';
 	    _box_context.strokeRect(face.x, face.y, face.width, face.height);
 	    _box_context.font = '11px Helvetica';
 	    _box_context.fillStyle = "#fff";
-//	    _box_context.fillText(face.name, face.x + face.width / 2, face.y + face.height + 11);
+	    _box_context.fillText(face.name, face.x + face.width / 2, face.y + face.height + 11);
     };
 
 	/**
