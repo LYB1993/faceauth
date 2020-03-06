@@ -23,10 +23,8 @@ socket_io.init_app(app)
 # lyb_image = face_recognition.load_image_file("static/lyb/picture_24.png")
 # lyb_face_encoding = face_recognition.face_encodings(lyb_image)[0]
 
-known_face_encodings = [
-]
-known_face_names = [
-]
+known_face_encodings = []
+known_face_names = []
 # 眨眼检测的最少次数
 min_wink_count = 3
 max_wink_count = 50
@@ -41,14 +39,15 @@ max_head_count = 50
 @socket_io.on('unknown_img', namespace='/notice')
 def video_stream(data):
     image_data = base64.urlsafe_b64decode(data['data'][22:])
-    unknown_img = np.array(Image.open(io.BytesIO(image_data)).convert("RGB"))
-    unknown_face_locations = face_recognition.face_locations(unknown_img)
-    if len(unknown_face_locations) > 0:
-        if app.config['BIO_ASSAY_STYLE'] == 'IR':
-            _ir(unknown_img, unknown_face_locations)
-        else:
-            bio_assay_ = data['bioAssay']
-            _gen(unknown_img, unknown_face_locations, bio_assay_)
+    if len(image_data) > 256:
+        unknown_img = np.array(Image.open(io.BytesIO(image_data)).convert("RGB"))
+        unknown_face_locations = face_recognition.face_locations(unknown_img)
+        if len(unknown_face_locations) > 0:
+            if app.config['BIO_ASSAY_STYLE'] == 'IR':
+                _ir(unknown_img, unknown_face_locations)
+            else:
+                bio_assay_ = data['bioAssay']
+                _gen(unknown_img, unknown_face_locations, bio_assay_)
 
 
 def _gen(unknown_img, unknown_face_locations, bio_assay_):
@@ -257,8 +256,12 @@ def upload_image():
         file.save(file_path)
         upload_face_image = face_recognition.load_image_file(file_path)
         upload_face_encoding = face_recognition.face_encodings(upload_face_image)[0]
-        known_face_encodings.append(upload_face_encoding)
-        known_face_names.append(card_id)
+        if card_id in known_face_names:
+            _name_index = known_face_names.index(card_id)
+            known_face_names[_name_index] = upload_face_encoding
+        else:
+            known_face_encodings.append(upload_face_encoding)
+            known_face_names.append(card_id)
         return render_template("/upload.html", success='true')
 
 

@@ -98,10 +98,6 @@ function Face() {
 				autoConnect: false
 			});
 		}
-		if (!_debug) {
-			_send_canvas.hide()
-		}
-		_display_box = face_tag.attr('display-box') === 'true'
 		if (_display_box) {
 			face_tag.append(_box_canvas);
 		}
@@ -119,6 +115,7 @@ function Face() {
 	 * 初始化页面需要的canvas和video标签
 	 */
 	function _init_table() {
+		_display_box = face_tag.attr('display-box') === 'true'
 		//用于发送验证图片
 		_send_canvas = $('<canvas/>');
 		_send_canvas.attr('width', _def_config['width'])
@@ -137,9 +134,6 @@ function Face() {
 			autoplay: 'autoplay',
 			id: 'IR'
 		});
-		if (!_debug) {
-			_scr_data_v.hide()
-		}
 		_display_v = $('<video/>', {
 			width: _def_config['width'],
 			height: _def_config['height'],
@@ -151,6 +145,12 @@ function Face() {
 			_display_v_iphone.setAttribute('id', 'RGB_iPhone');
 			_display_v_iphone.setAttribute('autoplay', '');
 			_display_v_iphone.setAttribute('playsinline', '');
+		}
+		if (!_debug) {
+			_send_canvas.css('position' ,'fixed')
+			_send_canvas.css('margin-top','-9999px')
+			_scr_data_v.css('position' ,'absolute')
+			_display_v.css('position' ,'absolute')
 		}
 
 	}
