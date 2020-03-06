@@ -300,13 +300,13 @@ function Face() {
 	 * @param {Object} _video
 	 */
 	function resetCanvasSize(_video) {
-		video_w = _video.clientWidth;
-		video_h = _video.clientHeight;
-		_send_canvas.attr('width', _video.clientWidth)
-		_send_canvas.attr('height', _video.clientHeight)
+		video_w = _video.videoWidth;
+		video_h = _video.videoHeight;
+		_send_canvas.attr('width', video_w)
+		_send_canvas.attr('height', video_h)
 		if (_display_box) {
-			_box_canvas.attr('width', _video.clientWidth)
-			_box_canvas.attr('height', _video.clientHeight)
+			_box_canvas.attr('width', video_w)
+			_box_canvas.attr('height', video_h)
 		}
 		isRestSize = false;
 	}

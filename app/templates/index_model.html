@@ -16,8 +16,11 @@
 	</head>
 	<body>
 		<div>
-			<face-div display-box="true"></face-div>
+			<face-div display-box="false"></face-div>
 		</div>
+        <div>
+            <p id="name"></p>
+        </div>
 	</body>
 	<script src="../static/js/jquery.min.js"></script>
 	<script src="../static/js/socket.io.slim.js"></script>
@@ -30,7 +33,7 @@
                 debug: false,
 				success: function(result) {
 					console.log(result)
-
+                    $('#name').text(result.name)
 				}
 			})
 		})
