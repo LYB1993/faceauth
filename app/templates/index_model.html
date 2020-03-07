@@ -3,16 +3,6 @@
 	<head>
 		<meta charset="UTF-8">
 		<title>模块化引入</title>
-        <style>
-        .control {
-            position: relative
-        }
-
-        video,
-        canvas {
-            position: absolute
-        }
-    </style>
 	</head>
 	<body>
 		<div>
@@ -28,7 +18,7 @@
 	<script>
 		$(document).ready(function() {
 
-			$.face('https://192.168.123.222:5001', {
+			$.face('https://192.168.20.196:5001', {
 				model: 'GEN',
                 debug: false,
 				success: function(result) {

@@ -276,5 +276,5 @@ else:
     env = os.environ.get('ENV', 'ir')
 
 if __name__ == '__main__':
-    app.config.from_object(get_config('gen'))
+    app.config.from_object(get_config('ir'))
     app.run(host='0.0.0.0', port=5001, debug=True, ssl_context=('server-cert.pem', 'server-key.pem'))

@@ -3,8 +3,8 @@
  */
 function Face() {
 	let _def_config = {
-		width: '640px',
-		height: '480px',
+		width: '320px',
+		height: '240px',
 		debug: false,
 		model: 'IR',
 		success: undefined,
@@ -150,6 +150,7 @@ function Face() {
 			_send_canvas.css('position' ,'fixed')
 			_send_canvas.css('margin-top','-9999px')
 			_scr_data_v.css('position' ,'absolute')
+			_scr_data_v.css('margin-top','-9999px')
 			_display_v.css('position' ,'absolute')
 		}
 
