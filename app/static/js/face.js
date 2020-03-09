@@ -126,7 +126,7 @@ function Face() {
 		_box_canvas.attr('width', _def_config['width'])
 		_box_canvas.attr('height', _def_config['height'])
 		_box_canvas.attr('id', 'box-canvas')
-		_box_canvas.css('z-index',999)
+		_box_canvas.css('z-index', 999)
 		_box_context = _box_canvas[0].getContext('2d')
 		_scr_data_v = $('<video/>', {
 			width: _def_config['width'],
@@ -134,6 +134,7 @@ function Face() {
 			autoplay: 'autoplay',
 			id: 'IR'
 		});
+
 		_display_v = $('<video/>', {
 			width: _def_config['width'],
 			height: _def_config['height'],
@@ -147,11 +148,11 @@ function Face() {
 			_display_v_iphone.setAttribute('playsinline', '');
 		}
 		if (!_debug) {
-			_send_canvas.css('position' ,'fixed')
-			_send_canvas.css('margin-top','-9999px')
-			_scr_data_v.css('position' ,'absolute')
-			_scr_data_v.css('margin-top','-9999px')
-			_display_v.css('position' ,'absolute')
+			_send_canvas.css('position', 'fixed')
+			_send_canvas.css('margin-top', '-9999px')
+			_scr_data_v.css('position', 'absolute')
+			_scr_data_v.css('margin-top', '-9999px')
+			_display_v.css('position', 'absolute')
 		}
 
 	}
@@ -201,12 +202,14 @@ function Face() {
 					devices.forEach(device => {
 						if (device.kind === 'videoinput') {
 							if (device.label.indexOf('IR') !== -1) {
+								_auto_choose_model()
 								initStream(device.label, device.deviceId, _scr_data_v[0])
 							} else {
 								initStream(device.label, device.deviceId, _display_v[0])
 							}
 						}
 					});
+
 				});
 			}
 		}
@@ -266,7 +269,7 @@ function Face() {
 			}
 		}
 		_stream_src.addEventListener('timeupdate', event => {
-			if(isRestSize){
+			if (isRestSize) {
 				resetCanvasSize(_stream_src)
 			}
 			_send_context.drawImage(_stream_src, 0, 0);
@@ -282,10 +285,12 @@ function Face() {
 					}
 					if (_model === 'IR') {
 						noticeSocket.emit('unknown_img', {
+							model: _model,
 							data: base64
 						})
 					} else {
 						noticeSocket.emit('unknown_img', {
+							model: _model,
 							data: base64,
 							bioAssay: send_msg
 						})
@@ -313,20 +318,20 @@ function Face() {
 	}
 
 	function _draw_face_box(location) {
-	    let face = {};
-	    face.x = parseInt(location['left'])
+		let face = {};
+		face.x = parseInt(location['left'])
 		face.y = parseInt(location['top'])
 		face.width = parseInt(location['bottom']) - parseInt(location['top'])
 		face.height = parseInt(location['right']) - parseInt(location['left'])
 		face.name = location['name']
 		_box_canvas.attr('width', video_w)
 		_box_canvas.attr('height', video_h)
-	    _box_context.strokeStyle = '#a64ceb';
-	    _box_context.strokeRect(face.x, face.y, face.width, face.height);
-	    _box_context.font = '11px Helvetica';
-	    _box_context.fillStyle = "#fff";
-	    _box_context.fillText(face.name, face.x + face.width / 2, face.y + face.height + 11);
-    };
+		_box_context.strokeStyle = '#a64ceb';
+		_box_context.strokeRect(face.x, face.y, face.width, face.height);
+		_box_context.font = '11px Helvetica';
+		_box_context.fillStyle = "#fff";
+		_box_context.fillText(face.name, face.x + face.width / 2, face.y + face.height + 11);
+	};
 
 	/**
 	 * 接收服务端信息
@@ -338,7 +343,7 @@ function Face() {
 				console.log(req)
 				let reqdata = JSON.parse(req.data);
 				if (_display_box) {
-				    _draw_face_box(reqdata[0]['location'])
+					_draw_face_box(reqdata[0]['location'])
 				}
 				if (reqdata[0]['pass'] || reqdata[0]['pass'] === 'true') {
 					result['pass'] = true;
@@ -381,6 +386,15 @@ function Face() {
 		})
 	}
 
+	function _auto_choose_model() {
+		if (_model === 'AUTO') {
+			if (isAndroid || isMac) {
+				_model = 'RGB'
+			}else{
+				_model = 'IR'
+			}
+		}
+	}
 
 
 	return {

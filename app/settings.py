@@ -20,9 +20,14 @@ class GEN_setting(setting):
     BIO_ASSAY_STYLE = 'GEN'
 
 
+class ATUO_setting(setting):
+    # 自动检测 AUTO
+    BIO_ASSAY_STYLE = 'AUTO'
+
 
 settings_map = {'ir': IR_setting,
-                'gen': GEN_setting}
+                'gen': GEN_setting,
+                'auto': ATUO_setting}
 
 
 def get_config(env="ir"):

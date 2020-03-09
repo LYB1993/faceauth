@@ -38,12 +38,16 @@ max_head_count = 50
 
 @socket_io.on('unknown_img', namespace='/notice')
 def video_stream(data):
+    if app.config['BIO_ASSAY_STYLE'] == 'AUTO':
+        _model = data['model']
+    else:
+        _model = app.config['BIO_ASSAY_STYLE']
     image_data = base64.urlsafe_b64decode(data['data'][22:])
     if len(image_data) > 256:
         unknown_img = np.array(Image.open(io.BytesIO(image_data)).convert("RGB"))
         unknown_face_locations = face_recognition.face_locations(unknown_img)
         if len(unknown_face_locations) > 0:
-            if app.config['BIO_ASSAY_STYLE'] == 'IR':
+            if _model == 'IR':
                 _ir(unknown_img, unknown_face_locations)
             else:
                 bio_assay_ = data['bioAssay']
