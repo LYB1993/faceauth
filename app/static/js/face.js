@@ -102,6 +102,8 @@ function Face() {
 			face_tag.append(_box_canvas);
 		}
 		face_tag.append(_scr_data_v);
+		face_tag.append(_p);
+		face_tag.append(_error_msg);
 		face_tag.append(_display_v);
 		face_tag.append(_send_canvas);
 		if (isMac) {
@@ -150,9 +152,9 @@ function Face() {
 		if (!_debug) {
 			_send_canvas.css('position', 'fixed')
 			_send_canvas.css('margin-top', '-9999px')
-			_scr_data_v.css('position', 'absolute')
+			_scr_data_v.css('position', 'fixed')
 			_scr_data_v.css('margin-top', '-9999px')
-			_display_v.css('position', 'absolute')
+			_display_v.css('position', 'fixed')
 		}
 
 	}
@@ -345,19 +347,29 @@ function Face() {
 				if (_display_box) {
 					_draw_face_box(reqdata[0]['location'])
 				}
-				if (reqdata[0]['pass'] || reqdata[0]['pass'] === 'true') {
-					result['pass'] = true;
-					result['success'] = true;
-					result['name'] = reqdata[0]['location']['name']
+				if(reqdata[0]['uninit'] || reqdata[0]['uninit'] === 'true'){
+					result['msg'] = reqdata[0]['msg']
+			        _fn_close_stream();
+					if (_def_config.success != undefined) {
+						_def_config.success(result)
+					}
+				}
+				if (reqdata[0]['living'] || reqdata[0]['living'] === 'true') {
+					if (reqdata[0]['pass'] || reqdata[0]['pass'] === 'true') {
+						result['pass'] = true;
+						result['msg'] = reqdata[0]['location']['name']
+					} else {
+						result['pass'] = false;
+						result['msg'] = reqdata[0]['msg']
+					}
 					_fn_close_stream();
 					if (_def_config.success != undefined) {
 						_def_config.success(result)
 					}
-					return;
 				}
 				if (_model !== 'IR') {
 					send_msg = JSON.stringify(reqdata[0])
-					_p[0].innerHTML = JSON.parse(req.data)[0]['tips_msg'];
+					_p[0].innerText = JSON.parse(req.data)[0]['tips_msg'];
 				}
 			})
 		}
@@ -390,7 +402,7 @@ function Face() {
 		if (_model === 'AUTO') {
 			if (isAndroid || isMac) {
 				_model = 'RGB'
-			}else{
+			} else {
 				_model = 'IR'
 			}
 		}

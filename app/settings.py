@@ -1,5 +1,5 @@
 class setting():
-    UPLOAD_FOLDER = 'E:\\MyProject\\FaceDemo\\image'
+    UPLOAD_FOLDER = 'E:\\MyProject\\FaceImage\\image'
     TOLERANCE = 0.6
     # 眨眼阈值
     FACE_EYS_WINK = 0.3

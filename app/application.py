@@ -34,10 +34,22 @@ max_mouth_count = 50
 # 摇头检测的最小次数
 min_head_count = 3
 max_head_count = 50
+error_result = {
+    'pass': False,
+    'living': False,
+    'matching': False,
+    'msg':''
+}
 
 
 @socket_io.on('unknown_img', namespace='/notice')
 def video_stream(data):
+    if len(known_face_encodings) == 0:
+        results = []
+        error_result['uninit'] = True
+        error_result['msg'] = 'not init face lib'
+        results.append(error_result)
+        emit('server', {'data': json.dumps(results)}, namespace='/notice')
     if app.config['BIO_ASSAY_STYLE'] == 'AUTO':
         _model = data['model']
     else:
@@ -71,7 +83,7 @@ def _gen(unknown_img, unknown_face_locations, bio_assay_):
     head_count = json_loads['head_count']
     head_count_success = json_loads['head_count_success']
     results = []
-    for (top, right, bottom, left), face_landmark in zip(unknown_face_locations,face_landmarks):
+    for (top, right, bottom, left), face_landmark in zip(unknown_face_locations, face_landmarks):
         eye_ear = (check_wink(face_landmark['left_eye']) + check_wink(face_landmark['right_eye'])) / 2
         lip_aer = 0
         head_aer = 0
@@ -129,15 +141,20 @@ def _gen(unknown_img, unknown_face_locations, bio_assay_):
                       'location': _face_location,
                       'tips_msg': 'Please Shaking head'}
         if result['wink_success'] and result['mouth_success'] and result['head_success']:
+            result['living'] = True
             unknown_encodings = face_recognition.face_encodings(unknown_img, unknown_face_locations)
             compare_faces = face_recognition.compare_faces(known_face_encodings, unknown_encodings[0])
             index = np.argmin(face_recognition.face_distance(known_face_encodings, unknown_encodings[0]))
-            if bool(app.config['FACE_CLEAR_CACHE']):
-                clear_face_cache(index, known_face_encodings)
-                clear_face_cache(index, known_face_names)
-            if compare_faces[0]:
+            if len(compare_faces) != 0 and compare_faces[0]:
+                if bool(app.config['FACE_CLEAR_CACHE']):
+                    clear_face_cache(index, known_face_encodings)
+                    clear_face_cache(index, known_face_names)
                 result['pass'] = True
                 result['location']['name'] = known_face_names[index]
+            else:
+                error_result['living'] = True
+                error_result['msg'] = 'unMatching'
+                emit('server', {'data': json.dumps([error_result])}, namespace='/notice')
         results.append(result)
     emit('server', {'data': json.dumps(results)}, namespace='/notice')
 
@@ -156,6 +173,7 @@ def _ir(unknown_img, unknown_face_locations):
         compare_faces = face_recognition.compare_faces(known_face_encodings, unknown_encoding, tolerance)
         name = 'Unknown'
         _pass = False
+        result = {}
         face_distances = face_recognition.face_distance(known_face_encodings, unknown_encoding)
         best_match_index = np.argmin(face_distances)
         if compare_faces[best_match_index]:
@@ -163,14 +181,20 @@ def _ir(unknown_img, unknown_face_locations):
                 clear_face_cache(best_match_index, known_face_encodings)
             name = known_face_names[best_match_index]
             _pass = True
-        _face_location = {'top': top,
-                          'right': right,
-                          'bottom': bottom,
-                          'left': left,
-                          'name': name}
-        result = {'location': _face_location,
-                  'pass': _pass
-                  }
+            _face_location = {'top': top,
+                              'right': right,
+                              'bottom': bottom,
+                              'left': left,
+                              'name': name}
+            result['matching'] = True
+            result = {'location': _face_location,
+                      'pass': _pass,
+                      'living' : True
+                      }
+        else:
+            error_result['msg'] = 'unMatching'
+            error_result['living'] = True
+            result = error_result
         results.append(result)
     emit('server', {'data': json.dumps(results)}, namespace='/notice')
 
@@ -200,7 +224,7 @@ def to_settings():
         _clear_ = request.form['clear']
         _tolerance = request.form['tolerance']
         app.config['BIO_ASSAY_STYLE'] = _model_
-        app.config['FACE_CLEAR_CACHE'] = bool(_clear_)
+        app.config['FACE_CLEAR_CACHE'] = _clear_ != 'false'
         app.config['TOLERANCE'] = _tolerance
         if app.config['BIO_ASSAY_STYLE'] != 'IR':
             app.config['FACE_EYS_WINK'] = request.form['eyeear']
@@ -246,6 +270,7 @@ def api_model():
 def index_safari():
     return render_template('/index_safari.html')
 
+
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_image():
     if request.method != 'POST':
@@ -280,5 +305,5 @@ else:
     env = os.environ.get('ENV', 'ir')
 
 if __name__ == '__main__':
-    app.config.from_object(get_config('ir'))
+    app.config.from_object(get_config('gen'))
     app.run(host='0.0.0.0', port=5001, debug=True, ssl_context=('server-cert.pem', 'server-key.pem'))
