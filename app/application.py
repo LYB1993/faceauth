@@ -10,7 +10,6 @@ import numpy as np
 from PIL import Image
 from flask import Flask, render_template, request, current_app
 from flask_socketio import SocketIO, emit
-from werkzeug.utils import redirect
 
 from app.settings import get_config
 from app.utils.faceutils import check_wink, clear_face_cache
@@ -20,11 +19,11 @@ socket_io = SocketIO()
 socket_io.init_app(app)
 
 # Load a sample picture and learn how to recognize it.
-# lyb_image = face_recognition.load_image_file("static/lyb/picture_24.png")
-# lyb_face_encoding = face_recognition.face_encodings(lyb_image)[0]
+lyb_image = face_recognition.load_image_file("static/lyb/picture_24.png")
+lyb_face_encoding = face_recognition.face_encodings(lyb_image)[0]
 
-known_face_encodings = []
-known_face_names = []
+known_face_encodings = [lyb_face_encoding]
+known_face_names = ['Liuyanbo']
 # 眨眼检测的最少次数
 min_wink_count = 3
 max_wink_count = 50
@@ -38,7 +37,7 @@ error_result = {
     'pass': False,
     'living': False,
     'matching': False,
-    'msg':''
+    'msg': ''
 }
 
 
@@ -92,7 +91,7 @@ def _gen(unknown_img, unknown_face_locations, bio_assay_):
                           'bottom': bottom,
                           'left': left,
                           'name': ''}
-        if wink_count < max_wink_count and wink_count_success < min_wink_count:
+        if wink_count < max_wink_count and wink_count_success <= min_wink_count:
             wink_count += 1
             if eye_ear < float(app.config['FACE_EYS_WINK']):
                 wink_count_success += 1
@@ -108,7 +107,7 @@ def _gen(unknown_img, unknown_face_locations, bio_assay_):
                       'pass': False,
                       'location': _face_location,
                       'tips_msg': 'Please Wink'}
-        elif mouth_count < max_mouth_count and mouth_count_success < min_mouth_count:
+        elif mouth_count < max_mouth_count and mouth_count_success <= min_mouth_count:
             mouth_count += 1
             if lip_aer < float(app.config['FACE_MOUTH_OPEN']):
                 mouth_count_success += 1
@@ -189,7 +188,7 @@ def _ir(unknown_img, unknown_face_locations):
             result['matching'] = True
             result = {'location': _face_location,
                       'pass': _pass,
-                      'living' : True
+                      'living': True
                       }
         else:
             error_result['msg'] = 'unMatching'

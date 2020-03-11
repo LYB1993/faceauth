@@ -21,6 +21,8 @@
 			$.face('https://192.168.20.196:5001', {
 				model: 'GEN',
                 debug: false,
+                width: '640px',
+				height: '480px',
 				success: function(result) {
 					console.log(result)
                     $('#msg').text(result.msg)

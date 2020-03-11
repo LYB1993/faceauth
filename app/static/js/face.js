@@ -345,7 +345,9 @@ function Face() {
 				console.log(req)
 				let reqdata = JSON.parse(req.data);
 				if (_display_box) {
-					_draw_face_box(reqdata[0]['location'])
+					if(reqdata[0]['location'] != undefined){
+						_draw_face_box(reqdata[0]['location'])
+					}
 				}
 				if(reqdata[0]['uninit'] || reqdata[0]['uninit'] === 'true'){
 					result['msg'] = reqdata[0]['msg']
