@@ -25,13 +25,13 @@ lyb_face_encoding = face_recognition.face_encodings(lyb_image)[0]
 known_face_encodings = [lyb_face_encoding]
 known_face_names = ['Liuyanbo']
 # 眨眼检测的最少次数
-min_wink_count = 3
+min_wink_count = 0
 max_wink_count = 50
 # 张嘴检测的最小次数
-min_mouth_count = 3
+min_mouth_count = 0
 max_mouth_count = 50
 # 摇头检测的最小次数
-min_head_count = 3
+min_head_count = 0
 max_head_count = 50
 error_result = {
     'pass': False,
@@ -93,7 +93,7 @@ def _gen(unknown_img, unknown_face_locations, bio_assay_):
                           'name': ''}
         if wink_count < max_wink_count and wink_count_success <= min_wink_count:
             wink_count += 1
-            if eye_ear < float(app.config['FACE_EYS_WINK']):
+            if eye_ear < float(app.config['FACE_EYS_WINK']) or min_wink_count == 0:
                 wink_count_success += 1
             result = {'wink_count': wink_count,
                       'wink_count_success': wink_count_success,
@@ -109,7 +109,7 @@ def _gen(unknown_img, unknown_face_locations, bio_assay_):
                       'tips_msg': 'Please Wink'}
         elif mouth_count < max_mouth_count and mouth_count_success <= min_mouth_count:
             mouth_count += 1
-            if lip_aer < float(app.config['FACE_MOUTH_OPEN']):
+            if lip_aer < float(app.config['FACE_MOUTH_OPEN']) or min_mouth_count == 0:
                 mouth_count_success += 1
             result = {'wink_count': max_wink_count,
                       'wink_count_success': min_wink_count,
@@ -123,9 +123,9 @@ def _gen(unknown_img, unknown_face_locations, bio_assay_):
                       'pass': False,
                       'location': _face_location,
                       'tips_msg': 'Please opened and shut Mouth'}
-        else:
+        elif head_count < max_head_count and head_count_success <= min_head_count:
             head_count += 1
-            if head_aer < float(app.config['FACE_HEAD_MOVE']):
+            if head_aer < float(app.config['FACE_HEAD_MOVE']) or min_head_count == 0:
                 head_count_success += 1
             result = {'wink_count': max_wink_count,
                       'wink_count_success': min_wink_count,
