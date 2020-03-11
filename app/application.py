@@ -145,7 +145,7 @@ def _gen(unknown_img, unknown_face_locations, bio_assay_):
             unknown_encodings = face_recognition.face_encodings(unknown_img, unknown_face_locations)
             compare_faces = face_recognition.compare_faces(known_face_encodings, unknown_encodings[0])
             index = np.argmin(face_recognition.face_distance(known_face_encodings, unknown_encodings[0]))
-            if len(compare_faces) != 0 and compare_faces[0]:
+            if len(compare_faces) != 0 and compare_faces[index]:
                 if bool(app.config['FACE_CLEAR_CACHE']):
                     clear_face_cache(index, known_face_encodings)
                     clear_face_cache(index, known_face_names)
