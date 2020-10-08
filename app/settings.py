@@ -30,5 +30,5 @@ settings_map = {'ir': IR_setting,
                 'auto': ATUO_setting}
 
 
-def get_config(env="ir"):
+def get_config(env="gen"):
     return settings_map[env]
