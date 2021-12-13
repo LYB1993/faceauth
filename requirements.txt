@@ -26,7 +26,7 @@ imutils==0.4.6
 itsdangerous==0.24
 Jinja2==2.10
 kiwisolver==1.1.0
-lxml==4.4.0
+lxml==4.6.5
 Markdown==2.6.11
 MarkupSafe==1.0
 matplotlib==3.0.3
